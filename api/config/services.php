@@ -49,4 +49,12 @@ return [
         'from' => env('CALLPROMN_FROM', ''),
         'base_url' => env('CALLPROMN_BASE_URL', 'https://api.messagepro.mn' ),
     ],
+
+    'termii' => [
+        'api_key' => env('TERMII_API_KEY', ''),
+        'from' => env('TERMII_FROM', ''),
+        'base_url' => env('TERMII_BASE_URL', 'https://api.ng.termii.com'),
+        'channel' => env('TERMII_CHANNEL', 'dnd'),
+        'type' => env('TERMII_TYPE', 'plain'),
+    ],
 ];

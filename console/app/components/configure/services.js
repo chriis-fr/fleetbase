@@ -28,6 +28,14 @@ export default class ConfigureServicesComponent extends Component {
     @tracked twilioTestPhone = null;
     @tracked twilioTestResponse;
 
+    /** termii service */
+    @tracked termiiApiKey = null;
+    @tracked termiiFrom = null;
+    @tracked termiiChannel = 'dnd';
+    @tracked termiiType = 'plain';
+    @tracked termiiTestPhone = null;
+    @tracked termiiTestResponse;
+
     /** sentry service */
     @tracked sentryDsn = null;
     @tracked sentryTestResponse;
@@ -79,6 +87,12 @@ export default class ConfigureServicesComponent extends Component {
                     token: this.twilioToken,
                     from: this.twilioFrom,
                 },
+                termii: {
+                    api_key: this.termiiApiKey,
+                    from: this.termiiFrom,
+                    channel: this.termiiChannel,
+                    type: this.termiiType,
+                },
                 sentry: {
                     dsn: this.sentryDsn,
                 },
@@ -98,6 +112,22 @@ export default class ConfigureServicesComponent extends Component {
             });
             this.twilioTestResponse = twilioTestResponse;
             return twilioTestResponse;
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @task *testTermii() {
+        try {
+            const termiiTestResponse = yield this.fetch.post('settings/test-termii-config', {
+                api_key: this.termiiApiKey,
+                from: this.termiiFrom,
+                channel: this.termiiChannel,
+                type: this.termiiType,
+                phone: this.termiiTestPhone,
+            });
+            this.termiiTestResponse = termiiTestResponse;
+            return termiiTestResponse;
         } catch (error) {
             this.notifications.serverError(error);
         }

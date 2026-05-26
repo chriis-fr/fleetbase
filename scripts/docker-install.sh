@@ -291,6 +291,7 @@ section "Optional Third-Party Services"
 
 IPINFO_API_KEY=""; GOOGLE_MAPS_API_KEY=""; GOOGLE_MAPS_LOCALE="us"
 TWILIO_SID=""; TWILIO_TOKEN=""; TWILIO_FROM=""
+TERMII_API_KEY=""; TERMII_FROM=""; TERMII_BASE_URL="https://api.ng.termii.com"; TERMII_CHANNEL="dnd"; TERMII_TYPE="plain"
 
 CONFIG_3P=false
 if ! $NON_INTERACTIVE; then
@@ -305,6 +306,14 @@ if $CONFIG_3P; then
   read -rp  "  Twilio Account SID (SMS, leave blank to skip): "      TWILIO_SID
   read -srp "  Twilio Auth Token: "                                   TWILIO_TOKEN; echo
   read -rp  "  Twilio From phone number: "                           TWILIO_FROM
+  read -rp  "  Termii API key (SMS, leave blank to skip): "          TERMII_API_KEY
+  read -rp  "  Termii From sender ID: "                              TERMII_FROM
+  read -rp  "  Termii Base URL [https://api.ng.termii.com]: "         TERMII_BASE_URL
+  read -rp  "  Termii Channel [dnd]: "                               TERMII_CHANNEL
+  read -rp  "  Termii Type [plain]: "                                 TERMII_TYPE
+  TERMII_BASE_URL="${TERMII_BASE_URL:-https://api.ng.termii.com}"
+  TERMII_CHANNEL="${TERMII_CHANNEL:-dnd}"
+  TERMII_TYPE="${TERMII_TYPE:-plain}"
   success "Third-party services configured"
 else
   info "Skipped — these can be added later via docker-compose.override.yml"
@@ -381,6 +390,11 @@ YAML_HEADER
   env_line "TWILIO_SID"          "$TWILIO_SID"
   env_line "TWILIO_TOKEN"        "$TWILIO_TOKEN"
   env_line "TWILIO_FROM"         "$TWILIO_FROM"
+  env_line "TERMII_API_KEY"      "$TERMII_API_KEY"
+  env_line "TERMII_FROM"         "$TERMII_FROM"
+  env_line "TERMII_BASE_URL"     "$TERMII_BASE_URL"
+  env_line "TERMII_CHANNEL"      "$TERMII_CHANNEL"
+  env_line "TERMII_TYPE"         "$TERMII_TYPE"
 
   cat <<YAML_SOCKET
 

@@ -16,12 +16,29 @@
     {{#if this.twilioTestResponse}}
         <div class="flex flex-row items-center rounded-lg border {{if (eq this.twilioTestResponse.status 'error') 'border-red-900 bg-red-800 text-red-100' 'border-green-900 bg-green-800 text-green-100'}} shadow-sm my-2 px-4 py-2">
             <FaIcon @icon={{if (eq this.twilioTestResponse.status 'error') 'triangle-exclamation' 'circle-check'}} class="mr-1.5 {{if (eq this.twilioTestResponse.status 'error') 'text-red-200' 'text-green-200'}}" />
-            <span class="text-xs">{{this.this.twilioTestResponse.message}}</span>
+            <span class="text-xs">{{this.twilioTestResponse.message}}</span>
         </div>
     {{/if}}
     <div class="flex flex-row items-center mt-3">
         <Input @value={{this.twilioTestPhone}} @type="tel" placeholder="Send Test SMS Here" class="form-input form-input-sm" />
         <Button @wrapperClass="ml-2" @icon="plug" @text="Test Twilio Config" @onClick={{perform this.testTwilio}} @isLoading={{this.testTwilio.isRunning}} @disabled={{not this.twilioTestPhone}} />
+    </div>
+</ContentPanel>
+
+<ContentPanel @title="Termii" @open={{true}} @wrapperClass="bordered-classic">
+    <InputGroup @name="Termii API Key" @value={{this.termiiApiKey}} disabled={{this.isLoading}} />
+    <InputGroup @name="Termii From" @value={{this.termiiFrom}} disabled={{this.isLoading}} />
+    <InputGroup @name="Termii Channel" @value={{this.termiiChannel}} disabled={{this.isLoading}} />
+    <InputGroup @name="Termii Type" @value={{this.termiiType}} disabled={{this.isLoading}} />
+    {{#if this.termiiTestResponse}}
+        <div class="flex flex-row items-center rounded-lg border {{if (eq this.termiiTestResponse.status 'error') 'border-red-900 bg-red-800 text-red-100' 'border-green-900 bg-green-800 text-green-100'}} shadow-sm my-2 px-4 py-2">
+            <FaIcon @icon={{if (eq this.termiiTestResponse.status 'error') 'triangle-exclamation' 'circle-check'}} class="mr-1.5 {{if (eq this.termiiTestResponse.status 'error') 'text-red-200' 'text-green-200'}}" />
+            <span class="text-xs">{{this.termiiTestResponse.message}}</span>
+        </div>
+    {{/if}}
+    <div class="flex flex-row items-center mt-3">
+        <Input @value={{this.termiiTestPhone}} @type="tel" placeholder="Send Test SMS Here" class="form-input form-input-sm" />
+        <Button @wrapperClass="ml-2" @icon="plug" @text="Test Termii Config" @onClick={{perform this.testTermii}} @isLoading={{this.testTermii.isRunning}} @disabled={{not this.termiiTestPhone}} />
     </div>
 </ContentPanel>
 

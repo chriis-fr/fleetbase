@@ -163,6 +163,11 @@ services:
       TWILIO_SID:  
       TWILIO_TOKEN:
       TWILIO_FROM:
+      TERMII_API_KEY:
+      TERMII_FROM:
+      TERMII_BASE_URL: https://api.ng.termii.com
+      TERMII_CHANNEL: dnd
+      TERMII_TYPE: plain
 
   socket:
     environment:
