@@ -53,8 +53,8 @@ return [
     'termii' => [
         'api_key' => env('TERMII_API_KEY', ''),
         'from' => env('TERMII_FROM', ''),
-        'base_url' => env('TERMII_BASE_URL', 'https://api.ng.termii.com'),
-        'channel' => env('TERMII_CHANNEL', 'dnd'),
+        'base_url' => env('TERMII_BASE_URL', 'https://v3.api.termii.com'),
+        'channel' => env('TERMII_CHANNEL', 'generic'),
         'type' => env('TERMII_TYPE', 'plain'),
     ],
 ];

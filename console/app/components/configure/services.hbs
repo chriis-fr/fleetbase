@@ -37,7 +37,7 @@
         </div>
     {{/if}}
     <div class="flex flex-row items-center mt-3">
-        <Input @value={{this.termiiTestPhone}} @type="tel" placeholder="Send Test SMS Here" class="form-input form-input-sm" />
+        <Input @value={{this.termiiTestPhone}} @type="tel" placeholder="e.g. 2348012345678 (no + sign)" class="form-input form-input-sm" />
         <Button @wrapperClass="ml-2" @icon="plug" @text="Test Termii Config" @onClick={{perform this.testTermii}} @isLoading={{this.testTermii.isRunning}} @disabled={{not this.termiiTestPhone}} />
     </div>
 </ContentPanel>

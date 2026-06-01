@@ -126,9 +126,11 @@ export default class ConfigureServicesComponent extends Component {
                 type: this.termiiType,
                 phone: this.termiiTestPhone,
             });
+            console.log('termiiTestResponse', termiiTestResponse);
             this.termiiTestResponse = termiiTestResponse;
             return termiiTestResponse;
         } catch (error) {
+            console.error('Error testing Termii config from task:', error);
             this.notifications.serverError(error);
         }
     }
