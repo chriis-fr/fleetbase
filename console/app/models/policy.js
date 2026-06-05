@@ -29,7 +29,7 @@ export default class PolicyModel extends Model {
 
     /** @computed */
     @computed('permissions') get permissionsArray() {
-        return this.permissions.toArray();
+        return this.permissions.slice();
     }
 
     @computed('updated_at') get updatedAgo() {

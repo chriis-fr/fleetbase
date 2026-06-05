@@ -5,5 +5,6 @@ setupDeprecationWorkflow({
         { handler: 'silence', matchId: 'ember-concurrency.deprecate-decorator-task' },
         { handler: 'silence', matchId: 'new-helper-names' },
         { handler: 'silence', matchId: 'ember-data:deprecate-non-strict-relationships' },
+        { handler: 'silence', matchId: 'ember-data:deprecate-array-like' },
     ],
 });

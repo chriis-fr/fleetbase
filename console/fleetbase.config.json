@@ -1,4 +1,6 @@
 {
-    "API_HOST": "http://10.42.13.107:8000",
-    "SOCKETCLUSTER_HOST": "ws://10.42.13.107:38000"
+    "API_HOST": "https://api.progressusmavericks.co.ke",
+    "SOCKETCLUSTER_HOST": "api.progressusmavericks.co.ke",
+    "SOCKETCLUSTER_SECURE": true,
+    "SOCKETCLUSTER_PORT": 443
 }

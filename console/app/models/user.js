@@ -106,20 +106,20 @@ export default class UserModel extends Model {
 
         // get direct applied permissions
         if (this.get('permissions')) {
-            permissions.pushObjects(this.get('permissions').toArray());
+            permissions.pushObjects(this.get('permissions').slice());
         }
 
         // get role permissions and role policies permissions
         if (this.get('role')) {
             if (this.get('role.permissions')) {
-                permissions.pushObjects(this.get('role.permissions').toArray());
+                permissions.pushObjects(this.get('role.permissions').slice());
             }
 
             if (this.get('role.policies')) {
                 for (let i = 0; i < this.get('role.policies').length; i++) {
                     const policy = this.get('role.policies').objectAt(i);
                     if (policy.get('permissions')) {
-                        permissions.pushObjects(policy.get('permissions').toArray());
+                        permissions.pushObjects(policy.get('permissions').slice());
                     }
                 }
             }
@@ -130,7 +130,7 @@ export default class UserModel extends Model {
             for (let i = 0; i < this.get('policies').length; i++) {
                 const policy = this.get('policies').objectAt(i);
                 if (policy.get('permissions')) {
-                    permissions.pushObjects(policy.get('permissions').toArray());
+                    permissions.pushObjects(policy.get('permissions').slice());
                 }
             }
         }

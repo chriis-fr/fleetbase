@@ -168,7 +168,7 @@ export default class NotificationsController extends Controller {
         if (this.selected.length === this.model.length) {
             this.selected.clear();
         } else {
-            this.selected = this.model.toArray();
+            this.selected = this.model.slice();
         }
     }
 
