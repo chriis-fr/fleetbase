@@ -57,4 +57,9 @@ return [
         'channel' => env('TERMII_CHANNEL', 'generic'),
         'type' => env('TERMII_TYPE', 'plain'),
     ],
+
+    'google_maps' => [
+        'locale' => env('GOOGLE_MAPS_LOCALE', 'us'),
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+    ]
 ];
