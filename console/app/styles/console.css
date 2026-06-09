@@ -4,6 +4,10 @@
     color: rgb(202 138 4);
 }
 
+.next-view-header .navbar-logo img {
+    border-radius: 6px;
+}
+
 .btn.btn-warning-alert.btn-warning,
 .two-fa-enforcement-alert button#two-fa-setup-button.btn.btn-warning body[data-theme='dark'] .btn.btn-warning-alert.btn-warning,
 body[data-theme='dark'] .two-fa-enforcement-alert button#two-fa-setup-button.btn.btn-warning {
