@@ -1,5 +1,6 @@
 app:
   name: Chains | FleetOPS
+  display-name: Chains | FleetOPS
 
 common:
   new: New
