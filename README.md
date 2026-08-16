@@ -7,6 +7,7 @@
     <p align="center" dir="auto">
       <a href="https://github.com/fleetbase/fleetbase/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/fleetbase/fleetbase" alt="License"></a>
       <a href="https://github.com/fleetbase/fleetbase/releases"><img src="https://img.shields.io/github/v/release/fleetbase/fleetbase" alt="Latest Release"></a>
+      <a href="https://codecov.io/gh/fleetbase/fleetbase"><img src="https://codecov.io/gh/fleetbase/fleetbase/branch/main/graph/badge.svg" alt="Coverage"></a>
       <a href="https://github.com/fleetbase/fleetbase/stargazers"><img src="https://img.shields.io/github/stars/fleetbase/fleetbase?style=social" alt="GitHub Stars"></a>
       <a href="https://discord.gg/V7RVWRQ2Wm"><img src="https://img.shields.io/discord/699834923032248430?logo=discord&label=Discord" alt="Discord"></a>
       <a href="https://github.com/fleetbase/fleetbase/issues"><img src="https://img.shields.io/github/issues/fleetbase/fleetbase" alt="GitHub Issues"></a>
@@ -284,7 +285,6 @@ Fleetbase offers open-source mobile apps that can be customized and deployed:
 | Feature | Status | Expected Release | Description |
 |---------|--------|------------------|-------------|
 | **Pallet (WMS)** | 🚧 In Development | Q2 2026 | Inventory and Warehouse Management extension |
-| **AI Agent** | 🔬 Research | Q4 2026 | AI integration for system and workflow automation |
 | **Dynamic Rules** | 📋 Planned | 2027 | Rule builder to trigger events, tasks, and jobs |
 
 Want to influence our roadmap? [Join the discussion](https://github.com/orgs/fleetbase/discussions)
