@@ -9,8 +9,8 @@
 	url = git@github.com:fleetbase/pallet.git
 [submodule "packages/core-api"]
 	path = packages/core-api
-	url = git@github.com:fleetbase/core-api.git
-	branch = main
+	url = https://github.com/chriis-fr/core-api.git
+	branch = chains-production
 [submodule "packages/ember-core"]
 	path = packages/ember-core
 	url = git@github.com:fleetbase/ember-core.git
