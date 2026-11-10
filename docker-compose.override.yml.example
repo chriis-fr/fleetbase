@@ -4,6 +4,19 @@
 version: "3.8"
 services:
   application:
+    # Pinned so the watcher survives whichever stage built the image.
+    #
+    # docker-compose.yml points `application` at `fleetbase/fleetbase-api:latest`
+    # - the same tag `docker buildx bake release` produces from the app-release
+    # stage (docker-bake.hcl "fleetbase-api"). Whenever that tag already exists
+    # locally, compose runs it instead of building the app-dev stage, and the
+    # app-dev CMD - the only place `--watch` appears - is silently dropped. The
+    # two stages are otherwise byte-identical, so restating the command here is
+    # enough; no dev-specific image is needed.
+    #
+    # Without this the workers never pick up edits under api/, and a change you
+    # made can look like it did not help when it was simply never loaded.
+    command: ["sh", "-c", "php artisan octane:frankenphp --max-requests=1000 --port=8000 --host=0.0.0.0 --watch"]
     environment:
       CONSOLE_HOST: http://localhost:4200
       # Add your environment-specific variables here
@@ -18,8 +31,23 @@ services:
 
   socket:
     environment:
+      # Socket auth. Prefer putting SOCKETCLUSTER_AUTH_KEY in the project .env file (next to
+      # docker-compose.yml) so application, queue, scheduler and socket all read the same
+      # value; scripts/docker-install.sh does this for you. Use at least 32 random
+      # characters, e.g. `openssl rand -hex 32`. Leaving it unset keeps auth off.
+      # Setting it only in api/.env has no effect: compose passes the project value (empty
+      # when unset) to the containers, and that takes precedence over api/.env.
+      # Auth stays off until SOCKETCLUSTER_AUTH_ENABLED=true (also set in the project .env
+      # file, so the API containers get the same value).
+      # SOCKETCLUSTER_AUTH_MODE: log   # off | log | enforce (default enforce once switched on)
+
       # DEVELOPMENT: Allow localhost connections (HTTP, HTTPS, and WebSocket protocols)
       SOCKETCLUSTER_OPTIONS: '{"origins":"http://localhost:*,https://localhost:*,ws://localhost:*,wss://localhost:*"}'
       
+      # The API publishes broadcasts with the Origin header from SOCKETCLUSTER_ORIGIN (set it in
+      # the project .env file, e.g. SOCKETCLUSTER_ORIGIN=https://yourdomain.com). While socket
+      # auth is off it must be one of the origins allowed here, or every broadcast is refused
+      # with "Invalid origin: *".
+
       # PRODUCTION: Replace with your actual domain(s) - include all protocols
       # SOCKETCLUSTER_OPTIONS: '{"origins":"https://yourdomain.com:*,wss://yourdomain.com:*,https://app.yourdomain.com:*,wss://app.yourdomain.com:*"}'

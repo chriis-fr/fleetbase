@@ -82,17 +82,17 @@ EXCLUDED = {
 # what is available, then Update Order Activity to apply it — once per stop, exactly as
 # navigator-app does. The collection's order carries four waypoints plus a pickup and a
 # dropoff — but a stop usually takes MORE than one activity to clear (arrive, then
-# complete), so `times` is well above the stop count rather than equal to it. Six cycles
-# applied cleanly and still left "Not all waypoints completed for order."
+# complete), so `times` is well above the stop count rather than equal to it.
 #
-# A surplus cycle is NOT harmless, which an earlier version of this comment got wrong:
-# once the flow is exhausted updateActivity answers "Order is already completed." with a
-# 400, and each extra pass is a counted failure. 16 passes completed the order and then
-# failed four times; 12 is what the flow actually consumes.
-#
-# So this number is tied to the order config's activity count and the collection's
-# waypoint count. If either changes, the tail of the cycle starts failing — the fix is to
-# retune this, not to treat it as an API problem.
+# A surplus cycle used to be a counted failure: once the flow is exhausted updateActivity
+# answers "Order is already completed." with a 400. The collection now absorbs that
+# itself — Get Order Next Activity records an empty answer as `order_flow_exhausted`, and
+# Update Order Activity then asserts the documented 400 (`expected_status`) instead of a
+# 2xx. (Skipping the surplus passes with pm.execution.skipRequest looked cleaner, but the
+# Postman CLI counts a skipped request as "Request could not be completed" and exits 1.)
+# So `times` only has to be an upper bound: a flow that needs more passes than this fails
+# at Complete an Order with "Not all waypoints completed", and the fix is to raise it, not
+# to treat it as an API problem. Six stops took eleven passes.
 #
 # `then` runs after the cycle, which is the only way Complete an Order can see every
 # waypoint COMPLETED.
@@ -102,7 +102,7 @@ CYCLES = {
             'Orders/Get Order Next Activity',
             'Orders/Update Order Activity',
         ],
-        'times': 12,
+        'times': 16,
         'then': ['Orders/Complete an Order'],
     },
 }
@@ -136,17 +136,39 @@ RUN_LATE = {
         'Cart/Remove item from cart',   # leaves cart A empty, which is the point
 
         # Cart B — priced, checked out, and turned into an order.
+        #
+        # Capture requires a PAID checkout since storefront's Stripe verification
+        # (fleetbase/storefront#95), and this run can never complete a card payment. So
+        # the stripe checkout is only read (status, intent update) and then captured as
+        # an explicit 402 negative contract, while the order the rest of the run needs
+        # comes from a cash pickup checkout, which needs no provider payment.
         'Cart/Retrieve or Create Cart',
         'Cart/Add Item to Cart',
         'Delivery Service Quote/Retrieve a Delivery Service Quote ❗',  # prices the cart
         'Checkout/Before ❗',                    # needs the cart AND {{service_quote_id}}
-        'Checkout/Capture checkout as order',    # needs {{checkout_token}} from Before
-        'Checkout/Get Checkout Status',          # ditto
-        'Checkout/Update Stripe Payment Intent', # needs the cart and the service quote
+        'Checkout/Get Checkout Status',          # needs {{checkout_token}}+{{checkout_id}} from Before
+        'Checkout/Update Stripe Payment Intent', # needs the cart and the service quote, BEFORE capture consumes the cart
+        'Checkout/Capture Stripe checkout without payment',  # 402 contract for the unpaid stripe checkout
+        'Checkout/Before Cash Pickup Checkout',  # needs the cart; sets {{cash_checkout_token}}
+        'Checkout/Capture checkout as order',    # captures the CASH checkout into a real order
         # {{order_id}} is captured by Capture checkout as order — the only request that
         # creates a storefront order.
         'Orders/Complete Order Pickup',
         'Orders/Get Order Receipt',
+        'Orders/Get Order Activity Flow',
+        'Orders/Get Order Stores',
+
+        # A review needs a COMPLETED order with the store, which only exists once Complete
+        # Order Pickup has run. In folder order the Reviews requests fired before any order
+        # existed: Create a review answered its documented 403, and Retrieve a Store review
+        # was sent the literal "{{review_id}}". Check Review Eligibility now records
+        # `review_eligible`, Create a review then creates one, and the rest address it.
+        # Delete a Review is a DELETE and is deferred to the delete phase on its own.
+        'Reviews/Query Reviews ❗',
+        'Reviews/Check Review Eligibility',
+        'Reviews/Create a review',
+        'Reviews/Counts the number of ratings for a store',
+        'Reviews/Retrieve a Store review',
 
         # Both QPay callbacks address {{checkout_id}}, which only Before sets — in the
         # Checkout folder they sort ahead of it and were sent the literal string
@@ -165,6 +187,11 @@ RUN_LATE = {
 DELETE_FIRST = {
     'Fleetbase API': [
         'Zones/Delete a Zone',            # cascades with Service Areas/Delete a Service Area
+        # Delete an Order (Orders sorts before both Tracking folders) soft-deletes the
+        # order's tracking number and every status on it, so both deletes answered
+        # "resource not found." The status goes first: it hangs off the number.
+        'Tracking Statuses/Delete a Tracking Status',
+        'Tracking Numbers/Delete a Tracking Number',
     ],
 }
 

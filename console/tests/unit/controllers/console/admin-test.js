@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { setupTest } from '@fleetbase/console/tests/helpers';
 import Service from '@ember/service';
+import window from 'ember-window-mock';
 
 const ADMIN_MENU_ITEMS = [
     {
@@ -42,7 +43,7 @@ class IntlStub extends Service {
         'console.admin.menu.overview': 'Overview',
         'console.admin.menu.organizations': 'Organizations',
         'console.admin.menu.branding': 'Branding',
-        'console.admin.menu.2fa-config': '2FA Config',
+        'console.admin.menu.2fa-config': 'Two-Factor Auth',
         'console.admin.menu.platform-api-token': 'Platform API Token',
         'console.admin.schedule-monitor.schedule-monitor': 'Schedule Monitor',
         'console.admin.menu.services': 'Services',
@@ -50,12 +51,22 @@ class IntlStub extends Service {
         'console.admin.menu.filesystem': 'Filesystem',
         'console.admin.menu.queue': 'Queue',
         'console.admin.menu.socket': 'Socket',
+        'console.admin.menu.oauth': 'OAuth Sign-in',
+        'console.admin.menu.oauth-apps': 'OAuth Apps',
         'console.admin.menu.push-notifications': 'Push Notifications',
     };
 
     t(key) {
         return this.translations[key] ?? key;
     }
+}
+
+/**
+ * Look a top-level navigator item up by label. Positions shift whenever a core item
+ * or group is added, so asserting on an index tests the layout by accident.
+ */
+function navItem(controller, label) {
+    return controller.navigationItems.find((item) => item.label === label);
 }
 
 module('Unit | Controller | console/admin', function (hooks) {
@@ -96,32 +107,25 @@ module('Unit | Controller | console/admin', function (hooks) {
         const items = controller.navigationItems;
 
         assert.deepEqual(
-            items.slice(0, 6).map((item) => item.label),
-            ['Overview', 'Organizations', 'Branding', '2FA Config', 'Platform API Token', 'Schedule Monitor'],
+            items.slice(0, 5).map((item) => item.label),
+            ['Overview', 'Organizations', 'Branding', 'Platform API Token', 'Schedule Monitor'],
             'core admin items retain their current order'
         );
         assert.deepEqual(
-            items.slice(0, 6).map((item) => item.route),
-            [
-                'console.admin.index',
-                'console.admin.organizations',
-                'console.admin.branding',
-                'console.admin.two-fa-settings',
-                'console.admin.platform-api-token',
-                'console.admin.schedule-monitor',
-            ],
+            items.slice(0, 5).map((item) => item.route),
+            ['console.admin.index', 'console.admin.organizations', 'console.admin.branding', 'console.admin.platform-api-token', 'console.admin.schedule-monitor'],
             'core admin items retain their routes'
         );
         assert.deepEqual(
-            items.slice(0, 6).map((item) => item.icon),
-            ['rectangle-list', 'building', 'palette', 'shield-halved', 'key', 'calendar-check'],
+            items.slice(0, 5).map((item) => item.icon),
+            ['rectangle-list', 'building', 'palette', 'key', 'calendar-check'],
             'core admin items retain their icons'
         );
     });
 
     test('it converts loose registry admin menu items into root navigator items', function (assert) {
         const controller = this.owner.lookup('controller:console/admin');
-        const registryItem = controller.navigationItems[6];
+        const registryItem = navItem(controller, 'Registry Config');
 
         assert.strictEqual(registryItem.label, 'Registry Config');
         assert.strictEqual(registryItem.icon, 'gear');
@@ -135,7 +139,7 @@ module('Unit | Controller | console/admin', function (hooks) {
 
     test('it converts registry admin panels into nested navigator branches', function (assert) {
         const controller = this.owner.lookup('controller:console/admin');
-        const panel = controller.navigationItems[7];
+        const panel = navItem(controller, 'Fleet-Ops Config');
 
         assert.strictEqual(panel.label, 'Fleet-Ops Config');
         assert.strictEqual(panel.icon, 'truck');
@@ -160,15 +164,19 @@ module('Unit | Controller | console/admin', function (hooks) {
 
     test('it marks virtual registry items active from the current admin virtual URL', function (assert) {
         const controller = this.owner.lookup('controller:console/admin');
-        const rootRegistryItem = controller.navigationItems[6];
-        const navigatorAppItem = controller.navigationItems[7].children[0];
-        const mapItem = controller.navigationItems[7].children[1];
+        const rootRegistryItem = navItem(controller, 'Registry Config');
+        const navigatorAppItem = navItem(controller, 'Fleet-Ops Config').children[0];
+        const mapItem = navItem(controller, 'Fleet-Ops Config').children[1];
 
-        // activeWhen delegates to isMenuItemActive, which reads window.location.pathname and
-        // (via getUrlParam) window.location.search off the real global window. replaceState
-        // rewrites both synchronously without navigating the test iframe.
-        const originalUrl = window.location.href;
-        const visit = (url) => window.history.replaceState(null, '', url);
+        // activeWhen delegates to ember-ui's isMenuItemActive, which reads location.pathname
+        // through ember-window-mock — but its collaborator getUrlParam has no such import and
+        // reads location.search off the real global window. The two therefore disagree unless
+        // both are pointed at the URL under test, so this sets each of them.
+        const originalUrl = globalThis.location.href;
+        const visit = (url) => {
+            window.location.href = url;
+            globalThis.history.replaceState(null, '', url);
+        };
 
         try {
             visit('/admin/fleet-ops?view=navigator-app');
@@ -182,15 +190,15 @@ module('Unit | Controller | console/admin', function (hooks) {
             assert.true(rootRegistryItem.activeWhen(), 'loose registry item is active for /admin/<slug>');
             assert.false(navigatorAppItem.activeWhen(), 'panel child is not active for loose registry URL');
         } finally {
-            window.history.replaceState(null, '', originalUrl);
+            globalThis.history.replaceState(null, '', originalUrl);
         }
     });
 
     test('it transitions registry items through the admin virtual route', function (assert) {
         const controller = this.owner.lookup('controller:console/admin');
         const universe = this.owner.lookup('service:universe');
-        const rootRegistryItem = controller.navigationItems[6];
-        const panelRegistryItem = controller.navigationItems[7].children[0];
+        const rootRegistryItem = navItem(controller, 'Registry Config');
+        const panelRegistryItem = navItem(controller, 'Fleet-Ops Config').children[0];
 
         rootRegistryItem.onClick();
         panelRegistryItem.onClick();
@@ -207,9 +215,59 @@ module('Unit | Controller | console/admin', function (hooks) {
         assert.true(universe.transitions[1].menuItem._virtual, 'panel registry click passes virtual-enriched item');
     });
 
+    test('it groups sign-in settings under auth config, beside system config', function (assert) {
+        const controller = this.owner.lookup('controller:console/admin');
+        const authConfig = navItem(controller, 'Auth Config');
+        const labels = controller.navigationItems.map((item) => item.label);
+
+        assert.ok(authConfig, 'the group exists');
+        assert.deepEqual(
+            authConfig.children.map((item) => item.label),
+            ['OAuth Sign-in', 'OAuth Apps', 'Two-Factor Auth'],
+            'sign-in first, then the apps that sign in with Fleetbase, then the second factor'
+        );
+        // Grouping is sidebar-only: 2FA keeps its route, so existing links still work.
+        assert.deepEqual(
+            authConfig.children.map((item) => item.route),
+            ['console.admin.oauth-settings', 'console.admin.oauth-apps', 'console.admin.two-fa-settings']
+        );
+        assert.strictEqual(labels.indexOf('Auth Config') + 1, labels.indexOf('System Config'), 'auth config sits just before system config');
+        assert.notOk(
+            controller.navigationItems.some((item) => item.label === 'Two-Factor Auth'),
+            '2FA is no longer a top-level item'
+        );
+    });
+
+    test('it groups api consumers, rate limits and the sms guard under api traffic, before database backups', function (assert) {
+        const controller = this.owner.lookup('controller:console/admin');
+        const apiTraffic = navItem(controller, 'API Traffic');
+        const labels = controller.navigationItems.map((item) => item.label);
+
+        assert.ok(apiTraffic, 'the group exists');
+        assert.deepEqual(
+            apiTraffic.children.map((item) => item.route),
+            ['console.admin.api-consumers', 'console.admin.rate-limits', 'console.admin.sms-guard'],
+            'visibility first, then the limits, then the sms guard'
+        );
+        assert.strictEqual(labels.indexOf('API Traffic') + 1, labels.indexOf('Database Backups'), 'api traffic sits just before database backups');
+    });
+
+    test('it adds database backups as a top-level item between api traffic and auth config', function (assert) {
+        const controller = this.owner.lookup('controller:console/admin');
+        const backups = navItem(controller, 'Database Backups');
+        const labels = controller.navigationItems.map((item) => item.label);
+
+        assert.ok(backups, 'the item exists');
+        assert.strictEqual(backups.route, 'console.admin.database-backups');
+        assert.strictEqual(backups.icon, 'database');
+        assert.notOk(backups.children, 'a single page, not a group');
+        assert.true(backups.keywords.includes('backup'), 'searchable as backup');
+        assert.strictEqual(labels.indexOf('Database Backups') + 1, labels.indexOf('Auth Config'), 'database backups sits just before auth config');
+    });
+
     test('it adds system config as a nested navigator branch', function (assert) {
         const controller = this.owner.lookup('controller:console/admin');
-        const systemConfig = controller.navigationItems[8];
+        const systemConfig = navItem(controller, 'System Config');
 
         assert.strictEqual(systemConfig.label, 'System Config');
         assert.deepEqual(
@@ -229,5 +287,55 @@ module('Unit | Controller | console/admin', function (hooks) {
             ],
             'system config children retain their routes'
         );
+    });
+});
+
+/**
+ * Registry-supplied menus are third-party data: panels and items arrive with whatever keys
+ * the extension chose to set, so every read has a fallback. This drives those fallbacks.
+ */
+module('Unit | Controller | console/admin | registry fallbacks', function (hooks) {
+    setupTest(hooks);
+
+    hooks.beforeEach(function () {
+        this.owner.register('service:intl', IntlStub);
+
+        this.seed = (adminMenuItems, adminMenuPanels) => {
+            const apply = (service) => {
+                Object.defineProperty(service, 'adminMenuItems', { configurable: true, value: adminMenuItems });
+                Object.defineProperty(service, 'adminMenuPanels', { configurable: true, value: adminMenuPanels });
+            };
+            apply(this.owner.lookup('service:universe/menu-service'));
+            apply(this.owner.lookup('service:universe'));
+
+            return this.owner.lookup('controller:console/admin');
+        };
+    });
+
+    test('an extension registry that has registered nothing yields no registry entries', function (assert) {
+        const controller = this.seed(undefined, undefined);
+
+        assert.deepEqual(controller.registryNavigationItems, [], 'no navigation items');
+        assert.deepEqual(controller.registryPanelItems, [], 'no panels');
+    });
+
+    test('a panel with only a title and slug is given a description and an icon', function (assert) {
+        const controller = this.seed([], [{ title: 'Billing Config', slug: 'billing' }]);
+
+        const [panel] = controller.registryPanelItems;
+        assert.strictEqual(panel.id, 'billing');
+        assert.strictEqual(panel.label, 'Billing Config');
+        assert.strictEqual(panel.description, 'Billing Config admin controls.', 'a description is generated from the title');
+        assert.strictEqual(panel.icon, 'folder', 'and a neutral icon stands in');
+        assert.deepEqual(panel.keywords, ['billing', 'Billing Config'], 'the absent description is filtered out of the keywords');
+        assert.deepEqual(panel.children, [], 'a panel with no items has no children');
+    });
+
+    test('a panel item with no slug is identified by its title', function (assert) {
+        const controller = this.seed([], [{ title: 'Billing Config', slug: 'billing', items: [{ title: 'Invoices' }] }]);
+
+        const [child] = controller.registryPanelItems[0].children;
+        assert.strictEqual(child.id, 'billing:Invoices:index', 'the title stands in for the slug, and the view defaults to index');
+        assert.strictEqual(child.label, 'Invoices', 'the title also stands in for the label');
     });
 });

@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { setupTest } from '@fleetbase/console/tests/helpers';
 import Service from '@ember/service';
+import { settled } from '@ember/test-helpers';
 
 module('Unit | Controller | auth/two-fa', function (hooks) {
     setupTest(hooks);
@@ -41,5 +42,293 @@ module('Unit | Controller | auth/two-fa', function (hooks) {
         await controller.verifyCode();
 
         assert.true(this.owner.lookup('service:notifications').errored, 'reports an invalid-session error');
+    });
+});
+
+module('Unit | Controller | auth/two-fa | verification flow', function (hooks) {
+    setupTest(hooks);
+
+    hooks.beforeEach(function () {
+        this.posted = [];
+        this.postResponse = { authToken: 'auth-token' };
+        this.postRejectsWith = null;
+        const context = this;
+
+        class FetchStub extends Service {
+            post(path, payload) {
+                context.posted.push({ path, payload });
+                return context.postRejectsWith ? Promise.reject(context.postRejectsWith) : Promise.resolve(context.postResponse);
+            }
+        }
+        class NotificationsStub extends Service {
+            errors = [];
+            successes = [];
+            infos = [];
+            error(message) {
+                this.errors.push(message);
+            }
+            success(message) {
+                this.successes.push(message);
+            }
+            info(message) {
+                this.infos.push(message);
+            }
+        }
+        class SessionStub extends Service {
+            authenticated = [];
+            persisted = [];
+            store = {
+                persist: (data) => {
+                    this.persisted.push(data);
+                    return Promise.resolve();
+                },
+            };
+            authenticate(authenticator, credentials) {
+                this.authenticated.push({ authenticator, credentials });
+                return Promise.resolve();
+            }
+        }
+
+        this.owner.register('service:fetch', FetchStub);
+        this.owner.register('service:notifications', NotificationsStub);
+        this.owner.register('service:session', SessionStub);
+
+        this.build = () => {
+            const controller = this.owner.lookup('controller:auth/two-fa');
+            this.transitions = [];
+            Object.defineProperty(controller.router, 'transitionTo', {
+                configurable: true,
+                value: (routeName) => {
+                    this.transitions.push(routeName);
+                    return Promise.resolve(routeName);
+                },
+            });
+            return controller;
+        };
+        this.notifications = () => this.owner.lookup('service:notifications');
+    });
+
+    test('verifyCode posts the code, authenticates and lands in the console', async function (assert) {
+        const controller = this.build();
+        controller.token = 'tok';
+        controller.clientToken = 'client-tok';
+        controller.identity = 'ron@fleetbase.io';
+        controller.verificationCode = '123456';
+
+        await controller.verifyCode();
+
+        assert.deepEqual(this.posted, [{ path: 'two-fa/verify', payload: { token: 'tok', code: '123456', clientToken: 'client-tok', identity: 'ron@fleetbase.io' } }]);
+        assert.deepEqual(this.owner.lookup('service:session').authenticated, [
+            { authenticator: 'authenticator:fleetbase', credentials: { authToken: 'auth-token', identity: 'ron@fleetbase.io' } },
+        ]);
+        assert.deepEqual(this.transitions, ['console']);
+        assert.strictEqual(this.notifications().successes.length, 1, 'success is reported');
+    });
+
+    test('verifyCode prevents the form from submitting itself', async function (assert) {
+        const controller = this.build();
+        controller.clientToken = 'client-tok';
+        let prevented = false;
+
+        await controller.verifyCode({ preventDefault: () => (prevented = true) });
+
+        assert.true(prevented);
+    });
+
+    test('an expired code is reported as information rather than an error', async function (assert) {
+        this.postRejectsWith = new Error('Verification code has expired');
+        const controller = this.build();
+        controller.clientToken = 'client-tok';
+
+        await controller.verifyCode();
+
+        assert.strictEqual(this.notifications().infos.length, 1, 'the user is told the code lapsed');
+        assert.strictEqual(this.notifications().errors.length, 0, 'and it is not framed as a failure');
+        assert.deepEqual(this.transitions, [], 'nothing navigates');
+    });
+
+    test('any other verification failure is reported as an error', async function (assert) {
+        this.postRejectsWith = new Error('invalid code');
+        const controller = this.build();
+        controller.clientToken = 'client-tok';
+
+        await controller.verifyCode();
+
+        assert.strictEqual(this.notifications().errors.length, 1);
+        assert.strictEqual(this.notifications().infos.length, 0);
+    });
+
+    test('too many wrong codes sends the user back to sign in again', async function (assert) {
+        this.postRejectsWith = new Error('Too many failed verification attempts. Please sign in again.');
+        const controller = this.build();
+        controller.clientToken = 'client-tok';
+
+        await controller.verifyCode();
+
+        assert.deepEqual(this.notifications().errors, [controller.intl.t('auth.two-fa.verify-code.too-many-attempts-notification')]);
+        assert.strictEqual(this.transitions.at(-1), 'auth.login', 'the dead 2FA session is abandoned');
+    });
+
+    test('handleOtpInput stores the code and immediately verifies it', async function (assert) {
+        const controller = this.build();
+        controller.clientToken = 'client-tok';
+
+        controller.handleOtpInput('654321');
+
+        assert.strictEqual(controller.verificationCode, '654321');
+        await settled();
+        assert.strictEqual(this.posted.at(-1).payload.code, '654321', 'the entered code is submitted without a further click');
+    });
+
+    test('resendCode restarts the countdown with the new client token', async function (assert) {
+        const expiry = new Date('2026-03-01T12:00:00');
+        this.postResponse = { clientToken: btoa(`2026-03-01T12:00:00|session`) };
+        const controller = this.build();
+        controller.identity = 'ron@fleetbase.io';
+        controller.token = 'tok';
+        controller.isCodeExpired = true;
+
+        await controller.resendCode();
+
+        assert.deepEqual(this.posted, [{ path: 'two-fa/resend', payload: { identity: 'ron@fleetbase.io', token: 'tok' } }]);
+        assert.strictEqual(controller.clientToken, this.postResponse.clientToken);
+        assert.true(controller.countdownReady, 'the countdown restarts');
+        assert.false(controller.isCodeExpired, 'and the expiry flag is cleared');
+        assert.true(controller.twoFactorSessionExpiresAfter instanceof Date, 'the new expiry is decoded');
+        assert.strictEqual(this.notifications().successes.length, 1);
+        assert.ok(expiry instanceof Date);
+    });
+
+    test('asking for a code instead switches an authenticator app user to the code that was sent', async function (assert) {
+        this.postResponse = { clientToken: btoa(`2026-03-01T12:00:00|session`), method: 'email' };
+        const controller = this.build();
+        controller.identity = 'ron@fleetbase.io';
+        controller.token = 'tok';
+        controller.method = 'authenticator_app';
+        controller.useRecoveryCode = true;
+        const event = {
+            defaultPrevented: false,
+            preventDefault() {
+                this.defaultPrevented = true;
+            },
+        };
+
+        await controller.resendCode(event);
+
+        assert.true(event.defaultPrevented, 'the link does not navigate');
+        assert.strictEqual(controller.method, 'email');
+        assert.false(controller.isAuthenticatorApp);
+        assert.false(controller.useRecoveryCode);
+        assert.true(controller.countdownReady, 'a sent code counts down');
+        assert.deepEqual(this.owner.lookup('service:session').persisted, [{ identity: 'ron@fleetbase.io', token: 'tok', clientToken: this.postResponse.clientToken, method: 'email' }]);
+    });
+
+    test('an authenticator app user can switch to a recovery code and back', async function (assert) {
+        const controller = this.build();
+        controller.method = 'authenticator_app';
+        controller.verificationCode = '123';
+
+        assert.true(controller.isAuthenticatorApp);
+
+        controller.toggleRecoveryCode();
+        assert.true(controller.useRecoveryCode);
+        assert.strictEqual(controller.verificationCode, '', 'the half-typed code is cleared');
+
+        controller.toggleRecoveryCode();
+        assert.false(controller.useRecoveryCode);
+    });
+
+    test('a recovery code is verified like any other code', async function (assert) {
+        const controller = this.build();
+        controller.token = 'tok';
+        controller.clientToken = 'client';
+        controller.identity = 'ron@fleetbase.io';
+        controller.method = 'authenticator_app';
+        controller.useRecoveryCode = true;
+        controller.verificationCode = 'k7d2m-9xq4p';
+
+        await controller.verifyCode();
+
+        assert.deepEqual(this.posted, [{ path: 'two-fa/verify', payload: { token: 'tok', code: 'k7d2m-9xq4p', clientToken: 'client', identity: 'ron@fleetbase.io' } }]);
+        assert.deepEqual(this.transitions, ['console']);
+    });
+
+    test('a resend that returns no client token is reported as a failure', async function (assert) {
+        this.postResponse = {};
+        const controller = this.build();
+
+        await controller.resendCode();
+
+        assert.strictEqual(this.notifications().errors.length, 1);
+        assert.false(controller.countdownReady, 'the countdown stays stopped');
+    });
+
+    test('a failed resend request is reported as a failure', async function (assert) {
+        this.postRejectsWith = new Error('resend unavailable');
+        const controller = this.build();
+
+        await controller.resendCode();
+
+        assert.strictEqual(this.notifications().errors.length, 1);
+        assert.false(controller.countdownReady);
+    });
+
+    test('cancelTwoFactor invalidates the session and returns to login', async function (assert) {
+        const controller = this.build();
+        controller.identity = 'ron@fleetbase.io';
+        controller.token = 'tok';
+
+        await controller.cancelTwoFactor();
+
+        assert.deepEqual(this.posted, [{ path: 'two-fa/invalidate', payload: { identity: 'ron@fleetbase.io', token: 'tok' } }]);
+        assert.deepEqual(this.transitions, ['auth.login']);
+    });
+
+    test('convertUtcToClientTime shifts a UTC stamp by the local offset', function (assert) {
+        const controller = this.build();
+        const utc = '2026-03-01T12:00:00Z';
+
+        const converted = controller.convertUtcToClientTime(utc);
+
+        assert.true(converted instanceof Date);
+        assert.strictEqual(converted.getTime(), new Date(utc).getTime() - new Date().getTimezoneOffset() * 60 * 1000);
+    });
+});
+
+module('Unit | Controller | auth/two-fa | client token expiry', function (hooks) {
+    setupTest(hooks);
+
+    hooks.beforeEach(function () {
+        this.controller = this.owner.lookup('controller:auth/two-fa');
+        // The token is base64 of "<expiry>|<identifier>".
+        this.token = (contents) => window.btoa(contents);
+    });
+
+    test('a token carrying a parseable expiry yields that date', function (assert) {
+        const expiry = this.controller.getExpirationDateFromClientToken(this.token('2026-05-06 14:30:00|session-1'));
+
+        assert.true(expiry instanceof Date, 'the expiry is handed back as a Date');
+    });
+
+    test('a token whose expiry cannot be read yields no expiry', function (assert) {
+        assert.strictEqual(
+            this.controller.getExpirationDateFromClientToken(this.token('not-a-timestamp|session-1')),
+            null,
+            'an unparseable stamp is treated as no expiry rather than an invalid Date'
+        );
+    });
+
+    test('a token with no separator yields no expiry', function (assert) {
+        assert.strictEqual(this.controller.getExpirationDateFromClientToken(this.token('sessiononly')), null);
+    });
+
+    test('a missing or non-string token yields no expiry', function (assert) {
+        assert.strictEqual(this.controller.getExpirationDateFromClientToken(undefined), null, 'no token');
+        assert.strictEqual(this.controller.getExpirationDateFromClientToken(''), null, 'an empty token');
+        assert.strictEqual(this.controller.getExpirationDateFromClientToken(12345), null, 'a non-string token');
+    });
+
+    test('a token that is not valid base64 yields no expiry instead of throwing', function (assert) {
+        assert.strictEqual(this.controller.getExpirationDateFromClientToken('!!!'), null);
     });
 });
