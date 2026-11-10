@@ -3,6 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { later } from '@ember/runloop';
+import window from 'ember-window-mock';
 
 export default class ConsoleAdminOrganizationsDetailsUsersController extends Controller {
     @service intl;
@@ -35,6 +36,10 @@ export default class ConsoleAdminOrganizationsDetailsUsersController extends Con
         {
             label: this.intl.t('common.name'),
             valuePath: 'name',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'user',
+            mediaPath: 'avatar_url',
+            statusPath: 'status',
             sticky: true,
             resizable: true,
             sortable: true,
@@ -44,9 +49,8 @@ export default class ConsoleAdminOrganizationsDetailsUsersController extends Con
         },
         {
             label: this.intl.t('common.role'),
-            valuePath: 'roleName',
+            valuePath: 'role_name',
             resizable: true,
-            sortable: true,
         },
         {
             label: this.intl.t('common.phone'),
@@ -68,6 +72,23 @@ export default class ConsoleAdminOrganizationsDetailsUsersController extends Con
             cellComponent: 'table/cell/status',
             resizable: true,
             sortable: true,
+        },
+        {
+            label: 'Two-factor authentication',
+            valuePath: 'two_factor_enabled',
+            cellComponent: 'admin/table/cell/two-factor',
+            resizable: true,
+        },
+        {
+            label: 'Linked sign-in providers',
+            valuePath: 'oauth_providers',
+            cellComponent: 'admin/table/cell/oauth-providers',
+            resizable: true,
+        },
+        {
+            label: 'Last sign-in',
+            valuePath: 'lastLogin',
+            resizable: true,
         },
         {
             label: '',
@@ -134,13 +155,7 @@ export default class ConsoleAdminOrganizationsDetailsUsersController extends Con
             await this.router.transitionTo('console');
             this.session.manuallyAuthenticate(token);
             this.notifications.info(`Now impersonating ${user.email}...`);
-            later(
-                this,
-                () => {
-                    window.location.reload();
-                },
-                600
-            );
+            later(() => window.location.reload(), 600);
         } catch (error) {
             this.notifications.serverError(error);
         }

@@ -589,6 +589,41 @@ auth:
       forgot-password-label: Parolingizni unutdingizmi?
       sign-in-button: Kirish
       create-account-button: Yangi hisob yaratish
+    oauth:
+      divider: 'Yoki davom eting'
+      continue-with: '{provider} bilan davom etish'
+      signing-in: 'Tizimga kirilmoqda...'
+      finish-signup: 'Davom etish uchun Fleetbase hisobingizni sozlashni yakunlang.'
+      connected-accounts: 'Bog‘langan hisoblar'
+      connected-accounts-help: 'Parol o‘rniga provayder orqali kiring. Bir nechtasini bog‘lash mumkin.'
+      linked-heading: 'Bog‘langan'
+      available-heading: 'Bog‘lash mumkin'
+      link-button: 'Bog‘lash'
+      unlink-button: 'Uzish'
+      unlink-title: '{provider} uzilsinmi?'
+      unlink-body: 'Endi {provider} orqali kira olmaysiz. Keyinroq uni qayta bog‘lashingiz mumkin.'
+      linked: 'Provayder hisobingizga bog‘landi.'
+      auto-linked: '{provider} endi hisobingizga bog‘landi. Bundan buyon u orqali kirishingiz mumkin.'
+      existing-account: 'Sizda allaqachon hisob bor, shuning uchun tizimga kiritdik.'
+      unlinked: '{provider} uzildi.'
+      errors:
+        generic: 'Kirishni yakunlab bo‘lmadi. Qaytadan urinib ko‘ring.'
+        access-denied: 'Kirish bekor qilindi.'
+        provider-error: 'Kirish provayderi xatolik haqida xabar berdi. Qaytadan urinib ko‘ring.'
+        provider-disabled: 'Bu kirish usuli mavjud emas.'
+        invalid-state: 'Bu kirish havolasi endi yaroqli emas. Qaytadan urinib ko‘ring.'
+        exchange-failed: 'Kirish provayderiga ulanib bo‘lmadi. Qaytadan urinib ko‘ring.'
+        expired: 'Bu kirish seansi muddati tugagan. Qaytadan urinib ko‘ring.'
+        hosted-domain: 'Hisobingiz ruxsat etilgan domenga tegishli emas.'
+        registration-disabled: 'Yangi ro‘yxatdan o‘tish mavjud emas.'
+        link-required: 'Bu e-pochta bilan hisob allaqachon mavjud. Tizimga kiring va hisob sozlamalaridan ushbu provayderni bog‘lang.'
+        customer-account: 'Mijoz hisoblari mijozlar portali orqali kirishi kerak.'
+        not-verified: 'Davom etish uchun hisobingiz tasdiqlanishi kerak.'
+        rate-limited: 'Urinishlar juda ko‘p. Birozdan so‘ng qayta urinib ko‘ring.'
+        already-linked: 'Bu provayder allaqachon hisobingizga bog‘langan.'
+        identity-already-linked: 'Bu hisob allaqachon boshqa Fleetbase foydalanuvchisiga bog‘langan.'
+        last-credential: 'Avval parol o‘rnating yoki boshqa provayderni bog‘lang, aks holda tizimga kira olmaysiz.'
+        link-failed: 'Provayderni bog‘lab bo‘lmadi. Qayta urinib ko‘ring.'
     slow-connection-message: Ulanish muammolari yuzaga kelmoqda.
   reset-password:
     success-message: Parolingiz tiklandi! Davom etish uchun tizimga kiring.
@@ -647,6 +682,8 @@ console:
       filesystem: Fayl tizimi
       queue: Navbat
       socket: Soket
+      oauth: 'OAuth orqali kirish'
+      oauth-apps: "OAuth ilovalari"
       push-notifications: Push-bildirishnomalar
     schedule-monitor:
       schedule-monitor: Jadval monitori
@@ -669,6 +706,8 @@ console:
         title: Ma'lumotlar bazasi konfiguratsiyasi
       filesystem:
         title: Fayl tizimi konfiguratsiyasi
+      oauth:
+        title: 'OAuth orqali kirish sozlamalari'
       mail:
         title: Pochta konfiguratsiyasi
       notification-channels:
@@ -738,6 +777,44 @@ invite:
     invitation-code-sent-text: Sizning taklifnoma kodingiz
     accept-invitation-text: Taklifni qabul qilish
 
+oauth:
+  authorize:
+    title: "Fleetbase bilan davom etish"
+    loading: "So‘rov tekshirilmoqda..."
+    heading: "{app} Fleetbase hisobingizga kirishni so‘ramoqda"
+    official: "Fleetbase tomonidan yaratilgan"
+    signed-in-as: "{email} sifatida kirgansiz"
+    not-you: "Siz emasmisiz?"
+    organization-label: "Ulashiladigan tashkilot"
+    organization-help: "Ilova faqat shu tashkilotni ko‘ra va o‘zgartira oladi. Uning kirishini istalgan vaqtda Hisob → Autentifikatsiya bo‘limida olib tashlashingiz mumkin."
+    not-admin: "faqat administratorlar ulasha oladi"
+    no-organization: "Siz ulasha oladigan birorta tashkilotni boshqarmaysiz. Tashkilotingiz administratoridan ilovani ulashni so‘rang."
+    your-organization: "tashkilotingiz"
+    will-be-able-to: "{app} quyidagilarni qila oladi:"
+    allow: "Ruxsat berish"
+    cancel: "Bekor qilish"
+    footnote: "Buni Fleetbase bilan emas, {app} bilan ulashyapsiz."
+    privacy: "Maxfiylik siyosati"
+    terms: "Shartlar"
+    reauthenticate: "Davom etish uchun qayta kiring..."
+    errors:
+      generic: "Bu so‘rovni bajarib bo‘lmadi."
+      invalid-client: "Bu ilova Fleetbase’da ro‘yxatdan o‘tmagan yoki o‘chirib qo‘yilgan."
+      invalid-request: "Ilovadan kelgan havola yaroqsiz. Ilovaga qaytib, qaytadan urinib ko‘ring."
+      invalid-scope: "Ilova o‘ziga ruxsat berilmagan kirishni so‘radi."
+      no-organization: "Bu ilova bilan ulashish uchun o‘zingiz boshqaradigan tashkilotni tanlang."
+      go-back: "Bu sahifani yopib, ilovaga qaytishingiz mumkin."
+  connected-apps:
+    title: "Ulangan ilovalar"
+    help: "Fleetbase hisobingiz bilan kirgan ilovalaringiz va har biri nima qila olishi. Ilovani olib tashlasangiz, undan chiqasiz va uning kirishi darhol to‘xtaydi."
+    organization: "{organization} ga kirish huquqi bor"
+    sign-in-only: "Faqat kirish"
+    last-used: "oxirgi marta {date} ishlatilgan"
+    never-used: "hali ishlatilmagan"
+    remove-button: "Kirishni olib tashlash"
+    remove-title: "{app} olib tashlansinmi?"
+    remove-body: "{app} hisobdan chiqariladi va kirishni darhol yo‘qotadi. Uni yana ishlatish uchun qaytadan ruxsat berishingiz kerak bo‘ladi."
+    removed: "{app} endi kira olmaydi."
 onboard:
   index:
     title: Hisobingizni yarating
@@ -755,6 +832,8 @@ onboard:
     password-help-text: Sizning parolingiz, yaxshi ekanligiga ishonch hosil qiling.
     confirm-password: Parolingizni tasdiqlang
     confirm-password-help-text: Yuqorida kiritgan parolingizni tasdiqlash uchun.
+    oauth-verified: 'Shaxsingiz tasdiqlandi. Parol kerak emas — provayderingiz orqali kirasiz.'
+    oauth-divider: 'Yoki elektron pochta orqali roʻyxatdan oʻting'
     continue-button-text: Davom etish
   verify-email:
     header-title: Hisobni tekshirish

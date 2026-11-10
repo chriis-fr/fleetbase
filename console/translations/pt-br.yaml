@@ -574,6 +574,41 @@ auth:
       forgot-password-label: Esqueceu sua senha?
       sign-in-button: Entrar
       create-account-button: Criar uma nova conta
+    oauth:
+      divider: 'Ou continuar com'
+      continue-with: 'Continuar com {provider}'
+      signing-in: 'Entrando...'
+      finish-signup: 'Conclua a configuração da sua conta Fleetbase para continuar.'
+      connected-accounts: 'Contas conectadas'
+      connected-accounts-help: 'Entre com um provedor em vez de uma senha. Você pode conectar mais de um.'
+      linked-heading: 'Conectadas'
+      available-heading: 'Disponíveis para conectar'
+      link-button: 'Conectar'
+      unlink-button: 'Desconectar'
+      unlink-title: 'Desconectar {provider}?'
+      unlink-body: 'Você não poderá mais entrar com {provider}. Você pode conectá-lo novamente depois.'
+      linked: 'Provedor conectado à sua conta.'
+      auto-linked: '{provider} agora está conectado à sua conta. A partir de agora você pode entrar com ele.'
+      existing-account: 'Você já tem uma conta, então fizemos seu login.'
+      unlinked: '{provider} desconectado.'
+      errors:
+        generic: 'Não foi possível concluir o login. Tente novamente.'
+        access-denied: 'O login foi cancelado.'
+        provider-error: 'O provedor de login relatou um problema. Tente novamente.'
+        provider-disabled: 'Esse método de login não está disponível.'
+        invalid-state: 'Esse link de login não é mais válido. Tente novamente.'
+        exchange-failed: 'Não foi possível contatar o provedor de login. Tente novamente.'
+        expired: 'Essa sessão de login expirou. Tente novamente.'
+        hosted-domain: 'Sua conta não pertence a um domínio permitido.'
+        registration-disabled: 'Novos cadastros não estão disponíveis.'
+        link-required: 'Já existe uma conta com este e-mail. Entre e vincule este provedor nas configurações da sua conta.'
+        customer-account: 'Contas de cliente devem entrar pelo portal do cliente.'
+        not-verified: 'Sua conta precisa ser verificada para continuar.'
+        rate-limited: 'Muitas tentativas. Tente novamente em breve.'
+        already-linked: 'Esse provedor já está conectado à sua conta.'
+        identity-already-linked: 'Essa conta já está conectada a outro usuário do Fleetbase.'
+        last-credential: 'Defina uma senha ou conecte outro provedor primeiro, ou você não conseguirá entrar.'
+        link-failed: 'Não foi possível conectar esse provedor. Tente novamente.'
     slow-connection-message: Problemas de conexão detectados.
   reset-password:
     success-message: Sua senha foi redefinida! Faça login para continuar.
@@ -632,6 +667,8 @@ console:
       filesystem: Sistema de Arquivos
       queue: Fila
       socket: Socket
+      oauth: 'Login OAuth'
+      oauth-apps: "Apps OAuth"
       push-notifications: Notificações Push
     schedule-monitor:
       schedule-monitor: Monitor de Agendamento
@@ -653,6 +690,8 @@ console:
         title: Configuração do Banco de Dados
       filesystem:
         title: Configuração do Sistema de Arquivos
+      oauth:
+        title: 'Configuração do login OAuth'
       mail:
         title: Configuração de Email
       notification-channels:
@@ -722,6 +761,44 @@ invite:
       por e-mail e clique em continuar.
     invitation-code-sent-text: Seu código de convite
     accept-invitation-text: Aceitar Convite
+oauth:
+  authorize:
+    title: "Continuar com a Fleetbase"
+    loading: "Verificando a solicitação..."
+    heading: "{app} quer acessar sua conta da Fleetbase"
+    official: "Feito pela Fleetbase"
+    signed-in-as: "Conectado como {email}"
+    not-you: "Não é você?"
+    organization-label: "Organização a compartilhar"
+    organization-help: "O app só pode ver e alterar esta organização. Você pode remover o acesso dele a qualquer momento em Conta → Autenticação."
+    not-admin: "só administradores podem compartilhá-la"
+    no-organization: "Você não administra nenhuma organização que possa compartilhar. Peça a um administrador da sua organização para conectar o app."
+    your-organization: "sua organização"
+    will-be-able-to: "{app} poderá:"
+    allow: "Permitir"
+    cancel: "Cancelar"
+    footnote: "Você está compartilhando isto com {app}, não com a Fleetbase."
+    privacy: "Política de privacidade"
+    terms: "Termos"
+    reauthenticate: "Entre novamente para continuar..."
+    errors:
+      generic: "Não foi possível concluir esta solicitação."
+      invalid-client: "Este app não está registrado na Fleetbase ou foi desativado."
+      invalid-request: "O link do app não é válido. Volte ao app e tente novamente."
+      invalid-scope: "O app pediu um acesso que não tem permissão para ter."
+      no-organization: "Escolha uma organização que você administra para compartilhar com este app."
+      go-back: "Você pode fechar esta página e voltar ao app."
+  connected-apps:
+    title: "Apps conectados"
+    help: "Apps em que você entrou com sua conta da Fleetbase e o que cada um pode fazer. Remover um app desconecta você dele e encerra o acesso na hora."
+    organization: "Tem acesso a {organization}"
+    sign-in-only: "Somente login"
+    last-used: "último uso em {date}"
+    never-used: "ainda não usado"
+    remove-button: "Remover acesso"
+    remove-title: "Remover {app}?"
+    remove-body: "{app} será desconectado e perderá o acesso na hora. Para usá-lo de novo, você precisará autorizá-lo novamente."
+    removed: "{app} não tem mais acesso."
 onboard:
   index:
     title: Crie sua conta
@@ -741,6 +818,8 @@ onboard:
     password-help-text: Sua senha, certifique-se de que seja uma boa.
     confirm-password: Confirme sua senha
     confirm-password-help-text: Apenas para confirmar a senha que você digitou acima.
+    oauth-verified: 'Sua identidade foi verificada. Não é necessária senha — você entrará com seu provedor.'
+    oauth-divider: 'Ou cadastre-se com e-mail'
     continue-button-text: Continuar
   verify-email:
     header-title: Verificação de Conta

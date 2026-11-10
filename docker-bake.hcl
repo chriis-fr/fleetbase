@@ -10,7 +10,7 @@ group "default" {
 }
 
 group "release" {
-  targets = ["fleetbase-console", "fleetbase-api"]
+  targets = ["fleetbase-console", "fleetbase-api", "fleetbase-socket"]
 }
 
 target "app" {
@@ -63,7 +63,7 @@ target "app-httpd" {
 target "fleetbase-console" {
   context    = "./console"
   dockerfile = "Dockerfile"
-  platforms  = ["linux/amd64", "linux/arm64"]
+  platforms  = ["linux/amd64"]
 
   tags = notequal("", REGISTRY) ? formatlist(
     "${REGISTRY}/fleetbase-console:%s",
@@ -79,6 +79,17 @@ target "fleetbase-api" {
 
   tags = notequal("", REGISTRY) ? formatlist(
     "${REGISTRY}/fleetbase-api:%s",
+    compact(["latest", VERSION])
+  ) : []
+}
+
+target "fleetbase-socket" {
+  context    = "./socket"
+  dockerfile = "Dockerfile"
+  platforms  = ["linux/amd64", "linux/arm64"]
+
+  tags = notequal("", REGISTRY) ? formatlist(
+    "${REGISTRY}/fleetbase-socket:%s",
     compact(["latest", VERSION])
   ) : []
 }

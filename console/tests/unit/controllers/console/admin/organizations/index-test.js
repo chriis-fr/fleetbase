@@ -1,6 +1,9 @@
 import { module, test } from 'qunit';
 import { setupTest } from '@fleetbase/console/tests/helpers';
 import Service from '@ember/service';
+import EmberObject from '@ember/object';
+import { A } from '@ember/array';
+import window from 'ember-window-mock';
 
 class IntlStub extends Service {
     t(key) {
@@ -77,6 +80,83 @@ module('Unit | Controller | console/admin/organizations/index', function (hooks)
 
         this.controller.search({ target: {} });
         assert.strictEqual(this.controller.query, '', 'a missing value becomes an empty query');
+    });
+
+    test('identity cells, filters and sorts use the API contract', function (assert) {
+        const columns = this.controller.columns;
+        assert.strictEqual(columns[0].cellComponent, 'table/cell/identity');
+        assert.strictEqual(columns[0].resourceType, 'company');
+        assert.strictEqual(columns[0].onClick, this.controller.goToCompany);
+        const owner = columns.find((column) => column.valuePath === 'owner_uuid');
+        assert.strictEqual(owner.cellComponent, 'table/cell/identity');
+        assert.strictEqual(owner.resourcePath, 'owner');
+        assert.strictEqual(owner.emptyText, 'Missing owner');
+        assert.strictEqual(columns.find((column) => column.valuePath === 'createdAt').sortParam, 'created_at');
+        assert.strictEqual(columns.find((column) => column.valuePath === 'updatedAt').sortParam, 'updated_at');
+        assert.true(columns.find((column) => column.valuePath === 'users_count').sortable);
+
+        const filters = this.controller.filterColumns;
+        for (const filter of filters) {
+            const param = filter.filterParam ?? filter.valuePath;
+            assert.ok(filter.filterComponent, `${param} has an input`);
+            assert.true(this.controller.queryParams.includes(param), `${param} is a query parameter`);
+        }
+        for (const param of ['country', 'timezone', 'ip_address', 'owner_name', 'owner_phone', 'created_at_after', 'created_at_before', 'updated_at_after', 'updated_at_before']) {
+            assert.ok(
+                filters.find((column) => column.valuePath === param),
+                `${param} can be filtered`
+            );
+        }
+        assert.strictEqual(filters.find((column) => column.valuePath === 'country').filterComponent, 'filter/country');
+    });
+
+    test('empty-state filtering includes search, saved views and explicit false values', function (assert) {
+        assert.false(this.controller.isFiltered);
+        this.controller.query = '';
+        assert.false(this.controller.isFiltered);
+        this.controller.query = 'owner';
+        assert.true(this.controller.isFiltered);
+        this.controller.query = null;
+        assert.false(this.controller.isFiltered);
+        this.controller.onboarding_completed = false;
+        assert.true(this.controller.isFiltered, 'incomplete onboarding is an active filter');
+        this.controller.onboarding_completed = null;
+        this.controller.missing_owner = 1;
+        assert.true(this.controller.isFiltered);
+    });
+
+    test('sorting resets pagination and column visibility does not remove filters', function (assert) {
+        this.controller.page = 8;
+        this.controller.sortOrganizations('-users_count,created_at');
+        assert.strictEqual(this.controller.sort, '-users_count,created_at');
+        assert.strictEqual(this.controller.page, 1);
+        const columns = this.controller.columns.map((column) => ({ ...column, hidden: true }));
+        this.controller.setColumns(columns);
+        assert.strictEqual(this.controller.columns, columns);
+        assert.ok(this.controller.filterColumns.some((column) => column.valuePath === 'country'));
+    });
+
+    test('clearing search and filters also clears pending changes and saved views', function (assert) {
+        const controller = this.controller;
+        controller.query = 'owner@example.com';
+        controller.country = 'SG';
+        controller.owner_phone = '+65';
+        controller.created_at_after = '2026-01-01';
+        controller.needs_attention = 1;
+        controller.page = 9;
+        controller.limit = 50;
+        controller.sort = '-users_count';
+        controller.filters.pendingQueryParams = { timezone: 'Asia/Singapore' };
+        controller.clearFilters();
+        assert.strictEqual(controller.query, '');
+        assert.strictEqual(controller.country, undefined);
+        assert.strictEqual(controller.owner_phone, undefined);
+        assert.strictEqual(controller.created_at_after, undefined);
+        assert.strictEqual(controller.needs_attention, null);
+        assert.deepEqual(controller.filters.pendingQueryParams, {});
+        assert.strictEqual(controller.page, 1);
+        assert.strictEqual(controller.limit, 50, 'clearing filters preserves the chosen page size');
+        assert.strictEqual(controller.sort, '-users_count', 'clearing filters preserves the chosen sort');
     });
 
     test('goToCompany and openActivity transition with the public id', function (assert) {
@@ -173,11 +253,36 @@ module('Unit | Controller | console/admin/organizations/index', function (hooks)
         });
 
         this.controller.exportOrganization();
-        assert.deepEqual(exported, { type: 'companies', options: { params: { selections: [] } } }, 'no table means no selections');
+        assert.deepEqual(exported, { type: 'companies', options: { params: { selections: [] } } }, 'no model means no selections');
 
-        this.controller.table = { selectedRows: [{ id: 'a' }, { id: 'b' }] };
+        this.controller.set(
+            'model',
+            A([
+                { id: 'a', checked: true },
+                { id: 'b', checked: true },
+                { id: 'c', checked: false },
+            ])
+        );
         this.controller.exportOrganization();
         assert.deepEqual(exported.options.params.selections, ['a', 'b']);
+    });
+
+    test('selection follows checked records and the current route model without a table instance', function (assert) {
+        const first = EmberObject.create({ id: 'first', checked: false });
+        const second = EmberObject.create({ id: 'second', checked: true });
+        this.controller.set('model', A([first, second]));
+
+        assert.deepEqual(this.controller.selectedOrganizations.mapBy('id'), ['second']);
+
+        first.set('checked', true);
+        second.set('checked', false);
+        assert.deepEqual(this.controller.selectedOrganizations.mapBy('id'), ['first'], 'checkbox changes update the header selection');
+
+        this.controller.set('model', A([EmberObject.create({ id: 'reopened', checked: false })]));
+        assert.strictEqual(this.controller.selectedOrganizations.length, 0, 'returning to the route does not retain the former table selection');
+
+        this.controller.set('model', undefined);
+        assert.strictEqual(this.controller.selectedOrganizations.length, 0, 'selection remains safe while the route has no model');
     });
 
     test('applySavedView sets exactly one filter and resets paging', function (assert) {
@@ -275,5 +380,322 @@ module('Unit | Controller | console/admin/organizations/index', function (hooks)
         } finally {
             Object.defineProperty(navigator, 'clipboard', { configurable: true, value: originalClipboard });
         }
+    });
+});
+
+module('Unit | Controller | console/admin/organizations/index | actions', function (hooks) {
+    setupTest(hooks);
+
+    hooks.beforeEach(function () {
+        this.posted = [];
+        this.postRejectsWith = null;
+        const context = this;
+
+        class FetchStub extends Service {
+            post(path, payload) {
+                context.posted.push({ path, payload });
+                return context.postRejectsWith ? Promise.reject(context.postRejectsWith) : Promise.resolve({ token: 'impersonation-token' });
+            }
+        }
+        class SessionStub extends Service {
+            authenticated = [];
+            manuallyAuthenticate(token) {
+                this.authenticated.push(token);
+            }
+        }
+        class NotificationsStub extends Service {
+            errors = [];
+            infos = [];
+            successes = [];
+            serverErrors = [];
+            error(message) {
+                this.errors.push(message);
+            }
+            info(message) {
+                this.infos.push(message);
+            }
+            success(message) {
+                this.successes.push(message);
+            }
+            serverError(error) {
+                this.serverErrors.push(error);
+            }
+        }
+        class CrudStub extends Service {
+            exported = [];
+            export(type, options) {
+                this.exported.push({ type, options });
+            }
+        }
+        this.owner.register('service:fetch', FetchStub);
+        this.owner.register('service:session', SessionStub);
+        this.owner.register('service:notifications', NotificationsStub);
+        this.owner.register('service:crud', CrudStub);
+
+        this.build = () => {
+            const controller = this.owner.lookup('controller:console/admin/organizations/index');
+            this.transitions = [];
+            Object.defineProperty(controller.router, 'transitionTo', {
+                configurable: true,
+                value: (...args) => {
+                    this.transitions.push(args);
+                    return Promise.resolve();
+                },
+            });
+            this.reloads = 0;
+            window.location.reload = () => this.reloads++;
+            return controller;
+        };
+        this.notifications = () => this.owner.lookup('service:notifications');
+    });
+
+    test('search stores the term and returns to the first page', function (assert) {
+        const controller = this.build();
+        controller.page = 5;
+
+        controller.search({ target: { value: 'fleetbase' } });
+        assert.strictEqual(controller.query, 'fleetbase');
+        assert.strictEqual(controller.page, 1);
+
+        controller.search({ target: {} });
+        assert.strictEqual(controller.query, '', 'a cleared box searches for nothing');
+    });
+
+    test('the row actions navigate to the organization and its activity', function (assert) {
+        const controller = this.build();
+
+        controller.goToCompany({ public_id: 'company_1' });
+        controller.openActivity({ public_id: 'company_1' });
+
+        assert.deepEqual(this.transitions, [
+            ['console.admin.organizations.details', 'company_1'],
+            ['console.admin.organizations.details.activity', 'company_1'],
+        ]);
+    });
+
+    test('resolveBelongsTo unwraps a loaded owner and withholds an unloaded one', function (assert) {
+        const controller = this.build();
+        const record = { id: 'user_1' };
+
+        assert.strictEqual(controller.resolveBelongsTo(null), null);
+        assert.strictEqual(controller.resolveBelongsTo({ content: record }), record, 'a resolved proxy yields its content');
+        assert.strictEqual(controller.resolveBelongsTo(record), record, 'a plain record is used as-is');
+        assert.strictEqual(controller.resolveBelongsTo({ isPending: true }), null);
+        assert.strictEqual(controller.resolveBelongsTo({ isFulfilled: false }), null);
+        assert.strictEqual(controller.resolveBelongsTo({ then: () => {} }), null);
+    });
+
+    test('impersonateOwner refuses when the organization has no owner', async function (assert) {
+        const controller = this.build();
+
+        await controller.impersonateOwner({ name: 'Ownerless Co' });
+
+        assert.deepEqual(this.notifications().errors, ['This organization does not have an owner to impersonate.']);
+        assert.deepEqual(this.posted, [], 'nothing is requested');
+    });
+
+    test('impersonateOwner switches into the owner session and reloads', async function (assert) {
+        const controller = this.build();
+
+        await controller.impersonateOwner({ owner: { content: { id: 'user_1', email: 'owner@fleetbase.io' } } });
+
+        assert.deepEqual(this.posted, [{ path: 'auth/impersonate', payload: { user: 'user_1' } }]);
+        assert.deepEqual(this.transitions, [['console']]);
+        assert.deepEqual(this.owner.lookup('service:session').authenticated, ['impersonation-token']);
+        assert.deepEqual(this.notifications().infos, ['Now impersonating owner@fleetbase.io...']);
+        assert.strictEqual(this.reloads, 1, 'the window is reloaded into the new session');
+    });
+
+    test('impersonateOwner falls back to the owner uuid on the organization', async function (assert) {
+        const controller = this.build();
+
+        await controller.impersonateOwner({ owner_uuid: 'user_2' });
+
+        assert.deepEqual(this.posted, [{ path: 'auth/impersonate', payload: { user: 'user_2' } }]);
+        assert.deepEqual(this.notifications().infos, ['Now impersonating organization owner...'], 'with no email it says so generically');
+    });
+
+    test('a failed impersonation is reported and nothing reloads', async function (assert) {
+        const failure = new Error('not permitted');
+        this.postRejectsWith = failure;
+        const controller = this.build();
+
+        await controller.impersonateOwner({ owner_uuid: 'user_2' });
+
+        assert.deepEqual(this.notifications().serverErrors, [failure]);
+        assert.strictEqual(this.reloads, 0);
+    });
+
+    test('copyId writes to the clipboard and reports what was copied', function (assert) {
+        const controller = this.build();
+        const written = [];
+        const original = navigator.clipboard;
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (value) => written.push(value) } });
+
+        try {
+            controller.copyId('company_1', 'Public ID');
+            controller.copyId('uuid-1');
+            controller.copyId(null);
+        } finally {
+            Object.defineProperty(navigator, 'clipboard', { configurable: true, value: original });
+        }
+
+        assert.deepEqual(written, ['company_1', 'uuid-1'], 'an empty value is not copied');
+        assert.deepEqual(this.notifications().successes, ['Public ID copied to clipboard.', 'ID copied to clipboard.'], 'the label defaults to ID');
+    });
+
+    test('exportOrganization exports the selected rows, or all of them', function (assert) {
+        const controller = this.build();
+        const crud = this.owner.lookup('service:crud');
+
+        controller.exportOrganization();
+        assert.deepEqual(crud.exported.at(-1), { type: 'companies', options: { params: { selections: [] } } }, 'no model means no selection');
+
+        controller.set(
+            'model',
+            A([
+                { id: 'a', checked: true },
+                { id: 'b', checked: true },
+                { id: 'c', checked: false },
+            ])
+        );
+        controller.exportOrganization();
+        assert.deepEqual(crud.exported.at(-1), { type: 'companies', options: { params: { selections: ['a', 'b'] } } });
+    });
+
+    test('each saved view sets its own filter and clears the others', function (assert) {
+        const controller = this.build();
+        controller.page = 3;
+
+        controller.applySavedView('needs_attention');
+        assert.strictEqual(controller.needs_attention, 1);
+        assert.strictEqual(controller.page, 1, 'paging restarts');
+
+        controller.applySavedView('missing_owner');
+        assert.strictEqual(controller.missing_owner, 1);
+        assert.strictEqual(controller.needs_attention, null, 'the previous view is cleared');
+
+        controller.applySavedView('incomplete_onboarding');
+        assert.false(controller.onboarding_completed);
+
+        controller.applySavedView('inactive_status');
+        assert.strictEqual(controller.inactive_status, 1);
+        assert.strictEqual(controller.onboarding_completed, null);
+
+        controller.applySavedView('not-a-view');
+        assert.strictEqual(controller.inactive_status, null, 'an unknown view just clears everything');
+    });
+
+    test('clearSavedView drops every filter and returns to the first page', function (assert) {
+        const controller = this.build();
+        controller.applySavedView('needs_attention');
+        controller.page = 4;
+
+        controller.clearSavedView();
+
+        assert.strictEqual(controller.needs_attention, null);
+        assert.strictEqual(controller.missing_owner, null);
+        assert.strictEqual(controller.inactive_status, null);
+        assert.strictEqual(controller.onboarding_completed, null);
+        assert.strictEqual(controller.page, 1);
+    });
+
+    test('the toolbar offers the saved views and an export action', function (assert) {
+        const controller = this.build();
+        const [views, exportButton] = controller.actionButtons;
+
+        assert.deepEqual(
+            views.items.filter((item) => item.label).map((item) => item.label),
+            ['Needs Attention', 'Missing Owner', 'Incomplete Onboarding', 'Inactive Status', 'Clear View']
+        );
+        assert.strictEqual(exportButton.onClick, controller.exportOrganization);
+        assert.deepEqual(
+            controller.bulkActions.map((action) => action.label),
+            ['Export selected']
+        );
+
+        views.items[0].onClick();
+        assert.strictEqual(controller.needs_attention, 1, 'the menu item applies its view');
+    });
+
+    test('the row dropdown copies the public id and uuid through copyId', function (assert) {
+        const controller = this.build();
+        const written = [];
+        const original = navigator.clipboard;
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (value) => written.push(value) } });
+        const actions = controller.columns.at(-1).actions;
+
+        try {
+            actions.find((action) => action.label === 'Copy Public ID').fn({ public_id: 'company_1', uuid: 'uuid-1' });
+            actions.find((action) => action.label === 'Copy UUID').fn({ public_id: 'company_1', uuid: 'uuid-1' });
+        } finally {
+            Object.defineProperty(navigator, 'clipboard', { configurable: true, value: original });
+        }
+
+        assert.deepEqual(written, ['company_1', 'uuid-1']);
+    });
+});
+
+module('Unit | Controller | console/admin/organizations/index | saved views', function (hooks) {
+    setupTest(hooks);
+
+    hooks.beforeEach(function () {
+        this.owner.register('service:intl', IntlStub);
+        this.owner.register('service:notifications', NotificationsStub);
+        this.controller = this.owner.lookup('controller:console/admin/organizations/index');
+        this.viewItems = () => this.controller.actionButtons[0].items.filter((item) => !item.separator);
+    });
+
+    test('the table starts on its first page, twenty at a time, newest first', function (assert) {
+        assert.strictEqual(this.controller.page, 1);
+        assert.strictEqual(this.controller.limit, 20);
+        assert.strictEqual(this.controller.sort, '-created_at');
+        assert.deepEqual(this.controller.companies, [], 'nothing is listed before the model loads');
+    });
+
+    test('each saved view in the Views menu applies its own filter', function (assert) {
+        const expected = [
+            { label: 'Needs Attention', filter: 'needs_attention', value: 1 },
+            { label: 'Missing Owner', filter: 'missing_owner', value: 1 },
+            { label: 'Incomplete Onboarding', filter: 'onboarding_completed', value: false },
+            { label: 'Inactive Status', filter: 'inactive_status', value: 1 },
+        ];
+
+        expected.forEach(({ label, filter, value }) => {
+            this.controller.page = 4;
+            const item = this.viewItems().find((entry) => entry.label === label);
+
+            item.onClick();
+
+            assert.strictEqual(this.controller[filter], value, `${label} sets ${filter}`);
+            assert.strictEqual(this.controller.page, 1, `${label} returns to the first page`);
+        });
+    });
+
+    test('applying one saved view clears the previous one', function (assert) {
+        this.viewItems()
+            .find((entry) => entry.label === 'Missing Owner')
+            .onClick();
+        this.viewItems()
+            .find((entry) => entry.label === 'Inactive Status')
+            .onClick();
+
+        assert.strictEqual(this.controller.inactive_status, 1);
+        assert.strictEqual(this.controller.missing_owner, null, 'the earlier filter is dropped rather than stacked');
+    });
+
+    test('Clear View drops every saved filter', function (assert) {
+        this.viewItems()
+            .find((entry) => entry.label === 'Needs Attention')
+            .onClick();
+
+        this.viewItems()
+            .find((entry) => entry.label === 'Clear View')
+            .onClick();
+
+        assert.strictEqual(this.controller.needs_attention, null);
+        assert.strictEqual(this.controller.missing_owner, null);
+        assert.strictEqual(this.controller.inactive_status, null);
+        assert.strictEqual(this.controller.onboarding_completed, null);
     });
 });
