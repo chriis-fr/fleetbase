@@ -1,0 +1,67 @@
+# Chains FleetOps production overrides (progressusmavericks.co.ke).
+# Docker Compose loads this on top of docker-compose.yml. Keep secrets out of it: they belong in api/.env,
+# which stays untracked. application, queue and scheduler share the Chains core-api and the same config.
+
+# version: "3.8"
+services:
+  application:
+    volumes:
+      - ./packages/core-api:/fleetbase/api/vendor/fleetbase/core-api
+      - ./api/config/services.php:/fleetbase/api/config/services.php
+    environment:
+      CONSOLE_HOST: https://progressusmavericks.co.ke
+      # Add your environment-specific variables here
+      MAIL_MAILER: smtp  # or ses, mailgun, postmark, sendgrid
+      OSRM_HOST: https://router.project-osrm.org
+      # IPINFO_API_KEY: your_api_key
+      # GOOGLE_MAPS_API_KEY: your_api_key
+      # GOOGLE_MAPS_LOCALE: us
+      # TWILIO_SID: your_twilio_sid
+      # TWILIO_TOKEN: your_twilio_token
+      # TWILIO_FROM: your_twilio_phone
+      # TERMII_API_KEY: your_termii_api_key
+      # TERMII_FROM: your_termii_sender_id
+      # TERMII_CHANNEL: generic
+      # TERMII_TYPE: plain
+
+  # Same code and config as the application container, so background jobs use the
+  # Chains core-api (Termii SMS) and settings too.
+  queue:
+    volumes:
+      - ./api/.env:/fleetbase/api/.env
+      - ./api/storage/app:/fleetbase/api/storage/app
+      - ./packages/core-api:/fleetbase/api/vendor/fleetbase/core-api
+      - ./api/config/services.php:/fleetbase/api/config/services.php
+    environment:
+      CONSOLE_HOST: https://progressusmavericks.co.ke
+      MAIL_MAILER: smtp
+      OSRM_HOST: https://router.project-osrm.org
+
+  # Same code and config as the application container, so background jobs use the
+  # Chains core-api (Termii SMS) and settings too.
+  scheduler:
+    volumes:
+      - ./api/.env:/fleetbase/api/.env
+      - ./api/storage/app:/fleetbase/api/storage/app
+      - ./packages/core-api:/fleetbase/api/vendor/fleetbase/core-api
+      - ./api/config/services.php:/fleetbase/api/config/services.php
+    environment:
+      CONSOLE_HOST: https://progressusmavericks.co.ke
+      MAIL_MAILER: smtp
+      OSRM_HOST: https://router.project-osrm.org
+
+  console:
+    volumes:
+      - ./console/fleetbase.config.json:/usr/share/nginx/html/fleetbase.config.json
+      - ./console/public/images:/usr/share/nginx/html/images
+      - ./console/public/favicon:/usr/share/nginx/html/favicon
+
+  socket:
+    environment:
+      # DEVELOPMENT: Allow localhost connections (HTTP, HTTPS, and WebSocket protocols)
+      # SOCKETCLUSTER_OPTIONS: '{"origins":"http://localhost:*,https://localhost:*,ws://localhost:*,wss://localhost:*"}'
+      # SOCKETCLUSTER_OPTIONS: '{"origins":["http://10.42.13.107:4200","http://10.42.13.107:8000"]}'
+      SOCKETCLUSTER_OPTIONS: '{"origins":"*:*"}'
+      
+      # PRODUCTION: Replace with your actual domain(s) - include all protocols
+      # SOCKETCLUSTER_OPTIONS: '{"origins":"https://yourdomain.com:*,wss://yourdomain.com:*,https://app.yourdomain.com:*,wss://app.yourdomain.com:*"}'
