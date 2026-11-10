@@ -59,7 +59,7 @@ services:
     command: ["go-crond", "--verbose", "root:./crontab"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "go-crond"]
+      test: ["CMD-SHELL", "grep -qa go-crond /proc/1/cmdline"]
       interval: 30s
       timeout: 10s
       retries: 3
