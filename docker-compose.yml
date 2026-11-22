@@ -16,7 +16,9 @@ services:
     # grow past 300 GB locally, so it is switched off.
     command: ["mysqld", "--skip-log-bin"]
     ports:
-      - "3306:3306"
+      # Bound to this machine only: the API reaches MySQL over the Docker network, and admin
+      # tools use an SSH tunnel. Publishing it on 0.0.0.0 exposed a password-less root.
+      - "127.0.0.1:3306:3306"
     volumes:
       - "./docker/database/:/docker-entrypoint-initdb.d/"
       - "./docker/database/mysql:/var/lib/mysql"

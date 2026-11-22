@@ -11,6 +11,15 @@ services:
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
       # Add your environment-specific variables here
+      # Public live-update address given to apps (Navigator instance link). nginx proxies
+      # wss://api.progressusmavericks.co.ke/socketcluster/ to the socket container.
+      SOCKETCLUSTER_HOST: api.progressusmavericks.co.ke
+      SOCKETCLUSTER_PORT: "443"
+      SOCKETCLUSTER_SECURE: "true"
+      # The API publishes to the socket server inside Docker, not through the internet.
+      SOCKETCLUSTER_PUBLISHER_HOST: socket
+      SOCKETCLUSTER_PUBLISHER_PORT: "8000"
+      SOCKETCLUSTER_PUBLISHER_SECURE: "false"
       MAIL_MAILER: smtp  # or ses, mailgun, postmark, sendgrid
       OSRM_HOST: https://router.project-osrm.org
       # IPINFO_API_KEY: your_api_key

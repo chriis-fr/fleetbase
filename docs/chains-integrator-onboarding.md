@@ -87,12 +87,17 @@ cloud, so each phone has to be linked to our instance once:
 3. The driver signs in with the account you created for them in FleetOps (Drivers).
 4. Driver onboarding, document uploads and what drivers may edit: **FleetOps, Settings, Navigator App**.
 
-**Known problem, not fixed yet:** the link also sends the live-update (SocketCluster) settings, and on this server
-those are unset, so phones get `socket` port `8000`, not secure — an address that only exists inside Docker. Drivers
-can sign in and work orders, but live updates to the phone will not connect. The fix is to set
-`SOCKETCLUSTER_HOST=api.progressusmavericks.co.ke`, `SOCKETCLUSTER_PORT=443`, `SOCKETCLUSTER_SECURE=true` for the
-API, but the API's own broadcaster reads the same three settings, so test that the console's live map still updates
-before keeping it.
+**Live updates on driver phones (fixed 2026-11-22).** The instance link sends the live-update settings, and
+they are now the public address: `api.progressusmavericks.co.ke`, port `443`, secure (set on the application
+service in `docker-compose.override.yml`; nginx proxies `/socketcluster/` to the socket container). The API's own
+publisher stays inside Docker through `SOCKETCLUSTER_PUBLISHER_HOST/PORT/SECURE` (core-api
+`config/broadcasting.connections.php`), so the console's live map is unaffected. Checked: a websocket handshake on
+`wss://api.progressusmavericks.co.ke/socketcluster/` answers 101, and an internal publish succeeds.
+Phones linked before this date should open a fresh instance link once to pick up the new address.
+
+## Database access (changed 2026-11-22)
+MySQL is bound to `127.0.0.1:3306` only. For admin tools, tunnel in:
+`ssh -L 3306:127.0.0.1:3306 chrisodhiambo@10.42.13.107`.
 
 ## Fixed during the 2026-11-10 test (core-api `22e1956`, `chains-production`)
 Order events fired from background jobs (dispatched, canceled, and others) had no organisation, so their webhooks
