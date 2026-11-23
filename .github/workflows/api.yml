@@ -139,3 +139,108 @@ jobs:
       # this app does not have, so it would fatal if it were ever wired up.
       - name: Enforce coverage threshold (100%)
         run: composer coverage:check
+
+  # A fresh install against real MySQL, normal and sandbox. The extension suites run
+  # on SQLite stand-in schemas that never load the spatial connection, so they stay
+  # green while a migration or the connection class itself is fatal on MySQL.
+  migrate:
+    name: Fresh MySQL Migrate (${{ matrix.mysql }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # 8.4 turns on restrict_fk_on_non_standard_key by default, as production's RDS 8.4.8 does.
+    # A fresh install still needs core-api's migration hook for the older create migrations; the
+    # last step then proves that, once migrated, no table needs it.
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ['8.0-oracle', '8.4.8']
+
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: production
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: fleetbase
+      DB_USERNAME: root
+      DB_PASSWORD: ""
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, gd, zip, pdo_mysql, redis, sockets, intl, bcmath, gmp, geos
+          coverage: none
+
+      - name: Install additional system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzip-dev libgd-dev libgeos-dev libgmp-dev default-mysql-client libicu-dev
+
+      - name: Configure Composer auth for GitHub
+        env:
+          # See the guard in the test job: an empty token makes Composer 401.
+          TOKEN: ${{ secrets._GITHUB_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ -n "$TOKEN" ]]; then
+            composer config --global github-oauth.github.com "$TOKEN"
+          else
+            echo "::warning::No GitHub token available; Composer will download dists anonymously."
+          fi
+
+      - name: Prepare environment file
+        run: '[ -f .env ] || cp .env.example .env'
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      - name: Create databases
+        run: php artisan mysql:createdb
+
+      - name: Migrate
+        run: php artisan migrate --force
+
+      - name: Migrate sandbox
+        run: php artisan sandbox:migrate --force
+
+      - name: Assert both connections migrated
+        run: bash ../scripts/ci/assert-migrated.sh
+
+      - name: Assert foreign keys point at unique keys
+        run: bash ../scripts/ci/assert-fk-targets-unique.sh
