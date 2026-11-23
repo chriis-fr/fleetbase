@@ -102,3 +102,56 @@ MySQL is bound to `127.0.0.1:3306` only. For admin tools, tunnel in:
 ## Fixed during the 2026-11-10 test (core-api `22e1956`, `chains-production`)
 Order events fired from background jobs (dispatched, canceled, and others) had no organisation, so their webhooks
 were never sent, on live or in the sandbox; and sandbox events were logged in the live database. Both are fixed.
+
+## Clients already connected (written 2026-11-23, with the v0.8.2 upgrade)
+
+"Connected" means their system calls our API with a key (`flb_live_` / `flb_test_`), receives our webhooks,
+uses a store key, or has drivers on Navigator linked to our instance. Everything they hold (keys, store keys,
+webhook secrets, Navigator links) lives in our database, so an upgrade keeps it all; nothing has to be reissued.
+
+### Before an upgrade or other maintenance
+1. **See who is live** (through the tunnel, counts only): live keys used in the last 7 days
+   (`api_credentials.last_used_at`, `test_mode = 0`), open orders, webhook endpoints. On 2026-11-23: no orders in
+   7 days, no live key used, one webhook endpoint.
+2. **Tell each live client 48 hours ahead**: the window, about two minutes of downtime, what changes (below), and
+   that calls failing with 502/503 in the window should be retried.
+3. Pick a quiet hour with no orders in progress.
+4. Back up and keep rollback ready: `~/fb-upgrade/cutover.sh` does the backup, tags the old images and writes
+   `~/backups/ROLLBACK-v082.txt` before it changes anything.
+
+### During the window
+- The API is down while the containers restart (about two minutes).
+- **Webhooks are tried 3 times** (5-second timeout, exponential back-off; core-api `config/webhook-server.php`).
+  If their endpoint is down longer than that, the delivery is logged as failed and is not sent again.
+
+### After (same day)
+1. **Our checks**: `/health` answers 200; `/v1/orders` without a key answers 401; console sign-in; a test-key order
+   created and cancelled in the sandbox, with its webhook received and its signature verified; the websocket
+   handshake on `wss://api.progressusmavericks.co.ke/socketcluster/` answers 101.
+2. **Tell clients it is done** and ask them to run their own smoke test with their test key: create an order,
+   read it, cancel it, verify the webhook signature.
+3. **Reconcile the window**: for any order they created or expected to change during it, `GET /v1/orders/{id}`
+   and compare the status; check the failed deliveries for their endpoint in the console (Developers, Webhooks).
+4. Drivers do nothing; Navigator links and accounts are unchanged.
+
+### What v0.8.2 changes for them (fleetops 0.6.75 to 0.7.2, core-api 1.6 to 2.0.4; diffed 2026-11-23)
+- **Nothing removed** from the `/v1` routes or responses. New fields: orders `adhoc_strategy`,
+  `required_vehicle_type`, `dispatch_outcome` (ad-hoc orders) and, when loaded, `payment_status`, `driver_rating`,
+  `adhoc_offer`; order configs `policies`, `custom_fields`; purchase rates `service_name`, `repriced`; service
+  quotes `seating_capacity`, `pickup_eta`. Their code must ignore fields it does not know (most JSON clients do;
+  a strict schema validator needs updating).
+- **Stricter**: dispatching a cancelled order answers 409; an order type can now switch dispatch off or require
+  custom fields (422). None of our six order types does either today (checked on a copy of live data).
+  Accepting an ad-hoc order now checks the driver is online and the order not already taken (409).
+- **Webhook signing unchanged**: `X-Fleetbase-Signature: t=<unix>,v1=<hex>`, the same Chains code.
+
+### Every week
+- Failed webhook deliveries per client (console, Developers, Webhooks); call them if an endpoint keeps failing.
+- Keys: one key per connected system. Rotate when someone with access leaves or a key leaks (delete in the
+  console: the old key answers 401 at once; issue a new one privately). Webhook secret:
+  `POST /v1/webhook-endpoints/{id}/rotate-secret`. Store key: Storefront, Settings, API, Rotate key.
+
+### If a client reports errors after an upgrade
+1. `docker compose logs application --since 1h` and `api/storage/logs` inside the application container.
+2. If it is ours and cannot be fixed quickly: follow `~/backups/ROLLBACK-v082.txt` (images and code first; the
+   database restore only if the old code trips over the new tables, and it loses anything written since).
