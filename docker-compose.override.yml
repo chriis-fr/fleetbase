@@ -5,6 +5,7 @@
 # version: "3.8"
 services:
   application:
+    image: fleetbase/fleetbase-api:v0.8.2
     volumes:
       - ./packages/core-api:/fleetbase/api/vendor/fleetbase/core-api
       - ./api/config/services.php:/fleetbase/api/config/services.php
@@ -36,6 +37,7 @@ services:
   # Same code and config as the application container, so background jobs use the
   # Chains core-api (Termii SMS) and settings too.
   queue:
+    image: fleetbase/fleetbase-api:v0.8.2
     volumes:
       - ./api/.env:/fleetbase/api/.env
       - ./api/storage/app:/fleetbase/api/storage/app
@@ -49,6 +51,7 @@ services:
   # Same code and config as the application container, so background jobs use the
   # Chains core-api (Termii SMS) and settings too.
   scheduler:
+    image: fleetbase/fleetbase-api:v0.8.2
     volumes:
       - ./api/.env:/fleetbase/api/.env
       - ./api/storage/app:/fleetbase/api/storage/app
@@ -66,6 +69,7 @@ services:
       - ./console/public/favicon:/usr/share/nginx/html/favicon
 
   socket:
+    image: fleetbase/fleetbase-socket:v0.8.2
     environment:
       # DEVELOPMENT: Allow localhost connections (HTTP, HTTPS, and WebSocket protocols)
       # SOCKETCLUSTER_OPTIONS: '{"origins":"http://localhost:*,https://localhost:*,ws://localhost:*,wss://localhost:*"}'
