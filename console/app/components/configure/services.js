@@ -28,6 +28,12 @@ export default class ConfigureServicesComponent extends Component {
     @tracked twilioTestPhone = null;
     @tracked twilioTestResponse;
 
+    /** termii service */
+    @tracked termiiApiKey = null;
+    @tracked termiiFrom = null;
+    @tracked termiiChannel = 'generic';
+    @tracked termiiType = 'plain';
+
     /** sms service */
     @tracked sms = null;
     @tracked smsSelectedProvider = 'twilio';
@@ -98,6 +104,24 @@ export default class ConfigureServicesComponent extends Component {
                 this.twilioFrom = event.target.value;
             }
         }
+
+        if (provider === 'termii') {
+            if (field === 'api_key') {
+                this.termiiApiKey = event.target.value;
+            }
+
+            if (field === 'from') {
+                this.termiiFrom = event.target.value;
+            }
+
+            if (field === 'channel') {
+                this.termiiChannel = event.target.value;
+            }
+
+            if (field === 'type') {
+                this.termiiType = event.target.value;
+            }
+        }
     }
 
     @action updateSmsProviderChecked(provider, field, event) {
@@ -144,6 +168,7 @@ export default class ConfigureServicesComponent extends Component {
 
     get smsProviders() {
         return [
+            { key: 'termii', name: 'Termii' },
             { key: 'twilio', name: 'Twilio' },
             { key: 'callpro', name: 'CallPro/MessagePro.mn' },
             { key: 'vonage', name: 'Vonage' },
@@ -152,6 +177,23 @@ export default class ConfigureServicesComponent extends Component {
             { key: 'smpp', name: 'SMPP Gateway' },
             { key: 'custom_http', name: 'Custom HTTP Gateway' },
         ];
+    }
+
+    get termiiChannels() {
+        return [
+            { key: 'generic', name: 'Generic' },
+            { key: 'dnd', name: 'DND' },
+            { key: 'whatsapp', name: 'WhatsApp' },
+        ];
+    }
+
+    get termiiConfig() {
+        return {
+            api_key: this.termiiApiKey,
+            from: this.termiiFrom,
+            channel: this.termiiChannel,
+            type: this.termiiType,
+        };
     }
 
     get selectedSmsProviderConfig() {
@@ -174,6 +216,10 @@ export default class ConfigureServicesComponent extends Component {
                     sid: this.twilioSid,
                     token: this.twilioToken,
                     from: this.twilioFrom,
+                },
+                termii: {
+                    ...sms.providers.termii,
+                    ...this.termiiConfig,
                 },
             },
         };
@@ -209,6 +255,7 @@ export default class ConfigureServicesComponent extends Component {
                     token: this.twilioToken,
                     from: this.twilioFrom,
                 },
+                termii: this.termiiConfig,
                 sms: this.smsConfigForSave,
                 sentry: {
                     dsn: this.sentryDsn,
@@ -270,6 +317,7 @@ export default class ConfigureServicesComponent extends Component {
                 token: this.twilioToken,
                 from: this.twilioFrom,
             },
+            termii: {},
             callpro: {},
             vonage: {},
             messagebird: {},
@@ -305,6 +353,13 @@ export default class ConfigureServicesComponent extends Component {
             sid: providers.twilio.sid ?? this.twilioSid,
             token: providers.twilio.token ?? this.twilioToken,
             from: providers.twilio.from ?? this.twilioFrom,
+        };
+
+        // The API sends with services.termii (the termii* values), so those win over
+        // whatever is stored under sms.providers.
+        providers.termii = {
+            ...providers.termii,
+            ...this.termiiConfig,
         };
 
         providers.smpp = {

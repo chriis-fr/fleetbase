@@ -442,6 +442,56 @@ module('Integration | Component | configure/services | actions', function (hooks
         assert.strictEqual(component.sms.providers.twilio.sid, 'new-sid');
     });
 
+    test('updateSmsProviderField mirrors the termii settings onto the component', async function (assert) {
+        const component = await this.build();
+
+        component.updateSmsProviderField('termii', 'api_key', { target: { value: 'termii-key' } });
+        component.updateSmsProviderField('termii', 'from', { target: { value: 'Chains' } });
+        component.updateSmsProviderField('termii', 'channel', { target: { value: 'dnd' } });
+        component.updateSmsProviderField('termii', 'type', { target: { value: 'unicode' } });
+
+        assert.strictEqual(component.termiiApiKey, 'termii-key');
+        assert.strictEqual(component.termiiFrom, 'Chains');
+        assert.strictEqual(component.termiiChannel, 'dnd');
+        assert.strictEqual(component.termiiType, 'unicode');
+        assert.deepEqual(component.sms.providers.termii, { api_key: 'termii-key', from: 'Chains', channel: 'dnd', type: 'unicode' });
+    });
+
+    test('updateSmsProviderField leaves the termii settings alone for fields it does not mirror', async function (assert) {
+        const component = await this.build();
+
+        component.updateSmsProviderField('termii', 'base_url', { target: { value: 'https://termii.test' } });
+
+        assert.strictEqual(component.termiiApiKey, null);
+        assert.strictEqual(component.sms.providers.termii.base_url, 'https://termii.test');
+    });
+
+    test('the termii settings loaded from the API fill the termii panel and are saved back', async function (assert) {
+        this.getResponse = {
+            termiiApiKey: 'loaded-key',
+            termiiFrom: 'SecureOTP',
+            termiiChannel: 'generic',
+            termiiType: 'plain',
+            sms: { defaultProvider: 'termii', providers: { termii: { api_key: 'stale-key', base_url: 'https://v3.api.termii.com' } } },
+        };
+        const component = await this.build();
+
+        assert.strictEqual(component.smsSelectedProvider, 'termii');
+        assert.strictEqual(component.selectedSmsProviderConfig.api_key, 'loaded-key', 'services.termii wins over sms.providers');
+        assert.strictEqual(component.selectedSmsProviderConfig.base_url, 'https://v3.api.termii.com');
+        assert.deepEqual(
+            component.termiiChannels.map((channel) => channel.key),
+            ['generic', 'dnd', 'whatsapp']
+        );
+
+        await component.save.perform();
+
+        const { payload } = this.posted.at(-1);
+        assert.deepEqual(payload.termii, { api_key: 'loaded-key', from: 'SecureOTP', channel: 'generic', type: 'plain' });
+        assert.strictEqual(payload.sms.defaultProvider, 'termii');
+        assert.strictEqual(payload.sms.providers.termii.api_key, 'loaded-key');
+    });
+
     test('updateSmsProviderField leaves the twilio credentials alone for other providers and fields', async function (assert) {
         const component = await this.build();
 
@@ -541,7 +591,7 @@ module('Integration | Component | configure/services | actions', function (hooks
 
         assert.deepEqual(
             component.smsProviders.map((provider) => provider.key),
-            ['twilio', 'callpro', 'vonage', 'messagebird', 'aws_sns', 'smpp', 'custom_http']
+            ['termii', 'twilio', 'callpro', 'vonage', 'messagebird', 'aws_sns', 'smpp', 'custom_http']
         );
     });
 

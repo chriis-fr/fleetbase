@@ -30,6 +30,20 @@
     </div>
 
     <div class="mt-4">
+        {{#if (eq this.smsSelectedProvider "termii")}}
+            <InputGroup @name="Termii API Key" @value={{this.selectedSmsProviderConfig.api_key}} {{on "input" (fn this.updateSmsProviderField "termii" "api_key")}} disabled={{this.isLoading}} data-test-termii-api-key />
+            <InputGroup @name="Termii From (Sender ID)" @value={{this.selectedSmsProviderConfig.from}} {{on "input" (fn this.updateSmsProviderField "termii" "from")}} disabled={{this.isLoading}} data-test-termii-from />
+            <div class="mb-2">
+                <label class="form-label">Termii Channel</label>
+                <select class="form-select form-select-sm w-full" data-test-termii-channel {{on "change" (fn this.updateSmsProviderField "termii" "channel")}}>
+                    {{#each this.termiiChannels as |channel|}}
+                        <option value={{channel.key}} selected={{eq this.selectedSmsProviderConfig.channel channel.key}}>{{channel.name}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <InputGroup @name="Termii Type" @value={{this.selectedSmsProviderConfig.type}} {{on "input" (fn this.updateSmsProviderField "termii" "type")}} disabled={{this.isLoading}} data-test-termii-type />
+        {{/if}}
+
         {{#if (eq this.smsSelectedProvider "twilio")}}
             <InputGroup @name="Twilio SID" @value={{this.selectedSmsProviderConfig.sid}} {{on "input" (fn this.updateSmsProviderField "twilio" "sid")}} disabled={{this.isLoading}} />
             <InputGroup @name="Twilio Token" @value={{this.selectedSmsProviderConfig.token}} {{on "input" (fn this.updateSmsProviderField "twilio" "token")}} disabled={{this.isLoading}} />
