@@ -9,8 +9,13 @@ services:
     volumes:
       - ./packages/core-api:/fleetbase/api/vendor/fleetbase/core-api
       - ./api/config/services.php:/fleetbase/api/config/services.php
+      # Uploaded files on the local disk (logos, attachments) are served from public/storage.
+      # The image has no link there, so /storage/... answered 404 and logos showed broken.
+      - ./api/storage/app/public:/fleetbase/api/public/storage
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
+      # api/.env has APP_DEBUG=true; with it on, an error page shows code and settings to anyone.
+      APP_DEBUG: "false"
       # Add your environment-specific variables here
       # Public live-update address given to apps (Navigator instance link). nginx proxies
       # wss://api.progressusmavericks.co.ke/socketcluster/ to the socket container.
@@ -45,6 +50,7 @@ services:
       - ./api/config/services.php:/fleetbase/api/config/services.php
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
+      APP_DEBUG: "false"
       MAIL_MAILER: smtp
       OSRM_HOST: https://router.project-osrm.org
 
@@ -59,6 +65,7 @@ services:
       - ./api/config/services.php:/fleetbase/api/config/services.php
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
+      APP_DEBUG: "false"
       MAIL_MAILER: smtp
       OSRM_HOST: https://router.project-osrm.org
 

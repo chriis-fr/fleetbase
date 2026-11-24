@@ -116,8 +116,8 @@ webhook secrets, Navigator links) lives in our database, so an upgrade keeps it 
 2. **Tell each live client 48 hours ahead**: the window, about two minutes of downtime, what changes (below), and
    that calls failing with 502/503 in the window should be retried.
 3. Pick a quiet hour with no orders in progress.
-4. Back up and keep rollback ready: `~/fb-upgrade/cutover.sh` does the backup, tags the old images and writes
-   `~/backups/ROLLBACK-v082.txt` before it changes anything.
+4. Back up and keep rollback ready: the cutover script (`~/fb-upgrade/cutover-v083.sh` for v0.8.3) does the backup,
+   tags the old images and writes `~/backups/ROLLBACK-v083.txt` before it changes anything.
 
 ### During the window
 - The API is down while the containers restart (about two minutes).
@@ -145,6 +145,11 @@ webhook secrets, Navigator links) lives in our database, so an upgrade keeps it 
   Accepting an ad-hoc order now checks the driver is online and the order not already taken (409).
 - **Webhook signing unchanged**: `X-Fleetbase-Signature: t=<unix>,v1=<hex>`, the same Chains code.
 
+### What v0.8.3 changes for them (fleetops 0.7.2 to 0.7.3, core-api 2.0.4 to 2.0.5; upgraded 2026-11-24)
+- **Nothing changed or removed** in the `/v1` routes or responses, and no database migration.
+- New and off by default: App Review sign-in for customer apps (Fleet-Ops, Settings, Customer Apps). Until an
+  organisation turns it on, the customer sign-in endpoints behave as before.
+
 ### Every week
 - Failed webhook deliveries per client (console, Developers, Webhooks); call them if an endpoint keeps failing.
 - Keys: one key per connected system. Rotate when someone with access leaves or a key leaks (delete in the
@@ -153,5 +158,5 @@ webhook secrets, Navigator links) lives in our database, so an upgrade keeps it 
 
 ### If a client reports errors after an upgrade
 1. `docker compose logs application --since 1h` and `api/storage/logs` inside the application container.
-2. If it is ours and cannot be fixed quickly: follow `~/backups/ROLLBACK-v082.txt` (images and code first; the
+2. If it is ours and cannot be fixed quickly: follow the latest `~/backups/ROLLBACK-*.txt` (images and code first; the
    database restore only if the old code trips over the new tables, and it loses anything written since).
