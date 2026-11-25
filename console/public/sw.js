@@ -31,12 +31,11 @@ async function saveShell(cache, html) {
     await cache.put(SHELL_KEY, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
 }
 
-async function refreshShell(address, cache, saved) {
+async function refreshShell(address, cache, savedSignature) {
     const fresh = await fetchShell(address);
     if (!fresh.signature) {
         return fresh.response;
     }
-    const savedSignature = saved ? signatureOf(await saved.clone().text()) : null;
     if (fresh.signature !== savedSignature) {
         await saveShell(cache, fresh.html);
         if (savedSignature) {
@@ -50,7 +49,9 @@ async function refreshShell(address, cache, saved) {
 async function shell(event) {
     const cache = await caches.open(SHELL_CACHE);
     const saved = await cache.match(SHELL_KEY);
-    const refresh = refreshShell(event.request.url, cache, saved);
+    // Read now: once the saved copy is handed to the page its body can no longer be read.
+    const savedSignature = saved ? signatureOf(await saved.clone().text()) : null;
+    const refresh = refreshShell(event.request.url, cache, savedSignature);
     if (saved) {
         event.waitUntil(refresh.catch(() => {}));
         return saved;
