@@ -60,6 +60,8 @@ return [
 
     'google_maps' => [
         'locale' => env('GOOGLE_MAPS_LOCALE', 'us'),
-        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+        // '' and not null while no key is set: Fleet-Ops returns this as a string, and null made
+        // its map settings call fail with a 500 on every Fleet-Ops page.
+        'api_key' => env('GOOGLE_MAPS_API_KEY', ''),
     ]
 ];
