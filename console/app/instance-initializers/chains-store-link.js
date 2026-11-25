@@ -60,8 +60,11 @@ export function initialize(appInstance) {
     }
 }
 
+// No `after`: an ordering hint here reshuffles the app's other instance initializers, and
+// Fleet-Ops then starts with a universe service that has no application instance yet
+// (seen on staging: "this.universe.getApplicationInstance is not a function" on the orders
+// page). This initializer needs no order: it only listens, and acts once a user is loaded.
 export default {
     name: 'chains-store-link',
-    after: 'setup-extensions',
     initialize,
 };
