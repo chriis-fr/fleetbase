@@ -15,8 +15,9 @@ const SHELL_KEY = '/__console_shell__';
 const signatureOf = (html) => (html.match(/\/assets\/[^"' >]+/g) || []).join('|');
 const isShellPath = (pathname) => !pathname.includes('.') && !pathname.startsWith('/cdn-cgi/');
 
-async function fetchShell(request) {
-    const response = await fetch(request, { cache: 'no-store' });
+// Fetched by address: a navigation request cannot be passed to fetch() with options.
+async function fetchShell(address) {
+    const response = await fetch(address, { cache: 'no-store', credentials: 'same-origin' });
     const type = response.headers.get('content-type') || '';
     if (!response.ok || response.redirected || !type.includes('text/html')) {
         return { response, signature: null };
@@ -30,8 +31,8 @@ async function saveShell(cache, html) {
     await cache.put(SHELL_KEY, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
 }
 
-async function refreshShell(request, cache, saved) {
-    const fresh = await fetchShell(request);
+async function refreshShell(address, cache, saved) {
+    const fresh = await fetchShell(address);
     if (!fresh.signature) {
         return fresh.response;
     }
@@ -49,7 +50,7 @@ async function refreshShell(request, cache, saved) {
 async function shell(event) {
     const cache = await caches.open(SHELL_CACHE);
     const saved = await cache.match(SHELL_KEY);
-    const refresh = refreshShell(event.request, cache, saved);
+    const refresh = refreshShell(event.request.url, cache, saved);
     if (saved) {
         event.waitUntil(refresh.catch(() => {}));
         return saved;
