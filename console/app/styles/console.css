@@ -267,3 +267,344 @@ body[data-theme='dark'] .oauth-provider-google .oauth-provider-logo-google svg {
     width: 14px;
     height: 14px;
 }
+
+/* ── Chains sign-in layout (app/templates/auth.hbs) ───────────────────────────────────────
+   Same panel, grid, card and type as app.chains-erp.com/auth. The pages inside the card
+   (login, forgot password, two-factor, verification) are stock Fleetbase templates written
+   for a grey page in either theme; the rules under .chains-auth-card put them on a white
+   card whatever the theme, which is why they carry !important. */
+.chains-auth {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #ffffff;
+}
+
+.chains-auth-aside {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+    background: linear-gradient(to bottom right, #1c398e, #172554);
+}
+
+@media (width >= 1024px) {
+    .chains-auth-aside {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1.5rem;
+        width: 42%;
+        max-width: 640px;
+        padding: clamp(24px, 6vh, 56px) 3rem;
+    }
+}
+
+.chains-auth-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    pointer-events: none;
+    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+    background-size: 75px 75px;
+}
+
+.chains-auth-glow {
+    position: absolute;
+    right: -12rem;
+    top: -12rem;
+    width: 35rem;
+    height: 35rem;
+    border-radius: 9999px;
+    background: #00139f;
+    opacity: 0.6;
+    filter: blur(120px);
+    pointer-events: none;
+}
+
+.chains-auth-watermark {
+    position: absolute;
+    right: -7rem;
+    bottom: -7rem;
+    width: 440px;
+    height: 440px;
+    opacity: 0.07;
+    pointer-events: none;
+}
+
+.chains-auth-brand {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: fit-content;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+}
+
+.chains-auth-brand img {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #ffffff;
+    object-fit: contain;
+    padding: 2px;
+}
+
+.chains-auth-pitch {
+    position: relative;
+    max-width: 520px;
+}
+
+.chains-auth-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(191 219 254 / 0.8);
+}
+
+.chains-auth-title {
+    margin-top: clamp(8px, 1.6vh, 16px);
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-size: clamp(32px, 6.2vh, 46px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.015em;
+    color: #ffffff;
+}
+
+.chains-auth-title span {
+    background: linear-gradient(to right, #f5a3e8, #9db4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.chains-auth-lead {
+    margin-top: clamp(10px, 2.2vh, 20px);
+    font-size: clamp(15px, 2.2vh, 17px);
+    line-height: 1.6;
+    color: rgb(219 234 254 / 0.85);
+}
+
+.chains-auth-points {
+    margin-top: clamp(14px, 4vh, 36px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.6vh, 14px);
+}
+
+.chains-auth-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 15px;
+    line-height: 1.4;
+    color: rgb(239 246 255 / 0.9);
+}
+
+.chains-auth-check {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.12);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2);
+}
+
+.chains-auth-check svg {
+    width: 12px;
+    height: 12px;
+}
+
+.chains-auth-foot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 13px;
+    color: rgb(191 219 254 / 0.75);
+}
+
+.chains-auth-foot a:hover {
+    color: #ffffff;
+}
+
+.chains-auth-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background-color: #ffffff;
+    background-image: linear-gradient(#edeff5 1px, transparent 1px), linear-gradient(90deg, #edeff5 1px, transparent 1px);
+    background-size: 75px 75px;
+    background-position: -1px -1px;
+}
+
+.chains-auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 2rem;
+    border: 1px solid #e3e7f0;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow:
+        0 1px 2px rgb(16 24 40 / 0.04),
+        0 24px 48px -24px rgb(0 19 159 / 0.22);
+    animation: chains-auth-in 0.22s ease-out both;
+}
+
+@keyframes chains-auth-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chains-auth-card {
+        animation: none;
+    }
+}
+
+/* Some auth pages bring their own grey card; inside ours it is just content. */
+.chains-auth-card > div.shadow,
+.chains-auth-card > div > div.shadow {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.chains-auth-card h1,
+.chains-auth-card h2,
+.chains-auth-card h3 {
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+    color: #0b1437 !important;
+}
+
+.chains-auth-card h2 {
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+    white-space: normal;
+}
+
+.chains-auth-card label,
+.chains-auth-card p,
+.chains-auth-card li,
+.chains-auth-card form span:not(.btn-wrapper) {
+    color: #1f2a44 !important;
+}
+
+.chains-auth-card a:not(.btn) {
+    color: #00139f !important;
+}
+
+.chains-auth-card a:not(.btn):hover {
+    text-decoration: underline;
+}
+
+.chains-auth-card form .rounded-md.shadow-sm {
+    box-shadow: none !important;
+}
+
+.chains-auth-card form .-mt-px {
+    margin-top: 0.75rem !important;
+}
+
+.chains-auth-card input:not([type='checkbox'], [type='radio'], [type='hidden']) {
+    width: 100%;
+    padding: 0.7rem 0.9rem !important;
+    border: 1px solid #d5dbe8 !important;
+    border-radius: 12px !important;
+    background-color: #ffffff !important;
+    color: #0b1437 !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+}
+
+.chains-auth-card input::placeholder {
+    color: #8a93a8 !important;
+}
+
+.chains-auth-card input:not([type='checkbox'], [type='radio']):focus {
+    border-color: #00139f !important;
+    box-shadow: 0 0 0 3px rgb(0 19 159 / 0.12) !important;
+    outline: none !important;
+}
+
+.chains-auth-card input[type='checkbox'] {
+    border-radius: 5px;
+    border-color: #c5cce0;
+    color: #00139f;
+}
+
+.chains-auth-card .btn-wrapper > button.btn,
+.chains-auth-card button.btn,
+.chains-auth-card a.btn {
+    justify-content: center;
+    width: 100%;
+    padding: 0.72rem 1rem !important;
+    border: 1px solid #d5dbe8 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2a44 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 1.25rem !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.chains-auth-card .btn-wrapper > button.btn:hover:not(:disabled),
+.chains-auth-card button.btn:hover:not(:disabled) {
+    background: #f4f6fb !important;
+}
+
+.chains-auth-card .btn-wrapper > button.btn.btn-primary,
+.chains-auth-card button.btn.btn-primary {
+    border-color: #00139f !important;
+    background: #00139f !important;
+    color: #ffffff !important;
+}
+
+.chains-auth-card .btn-wrapper > button.btn.btn-primary:hover:not(:disabled),
+.chains-auth-card button.btn.btn-primary:hover:not(:disabled) {
+    border-color: #000f7d !important;
+    background: #000f7d !important;
+}
+
+.chains-auth-card button.btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.chains-auth-card button.btn svg,
+.chains-auth-card button.btn span {
+    color: inherit !important;
+}
+
+.chains-auth-attribution {
+    margin-top: 1.25rem;
+    font-size: 12px;
+}
+
+.chains-auth-attribution,
+.chains-auth-attribution * {
+    color: #8a93a8 !important;
+}

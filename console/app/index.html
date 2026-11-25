@@ -10,8 +10,6 @@
 
     {{content-for "head"}}
 
-    <!-- The loading screen's logo, asked for ahead of the scripts so it shows at once. -->
-    <link rel="preload" as="image" href="{{rootURL}}favicon/android-chrome-192x192.png" fetchpriority="high" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
@@ -23,52 +21,223 @@
     <link integrity="" rel="stylesheet" href="{{rootURL}}assets/@fleetbase/console.css">
 
     <style>
-      /* Painted with the page itself, before any stylesheet arrives. */
+      /*
+       * The opening cover, painted with the page itself, before any stylesheet arrives.
+       *
+       * It is the Chains brand transition (the blue panel, the spinning mark and the word
+       * rising in, as on app.chains-erp.com after sign-in), with the word "FleetOps" and a
+       * truck on a road. app/utils/remove-boot-loader.js adds .fx-out when the app is
+       * ready: the mark lifts, the letters rise away and the panels open from the top.
+       */
       html.boot-dark,
       html.boot-dark body {
         background-color: #111827;
       }
       #boot-loader {
-        position: absolute;
-        z-index: 9999999999;
+        position: fixed;
         inset: 0;
+        z-index: 2147483000;
+        cursor: progress;
+        font-family: 'Inter UI', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      }
+      #boot-loader .fx-panel,
+      #boot-loader .fx-panel2 {
+        position: absolute;
+        inset: 0;
+        transform-origin: top;
+        will-change: transform;
+      }
+      /* The second panel takes the colour of the page underneath, so the reveal never flashes. */
+      #boot-loader .fx-panel2 {
+        background: #ffffff;
+      }
+      html.boot-dark #boot-loader .fx-panel2 {
+        background: #111827;
+      }
+      #boot-loader .fx-panel {
+        background: linear-gradient(to bottom right, #1c398e, #172554);
         display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      #boot-loader .boot-mark {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      #boot-loader .boot-mark img {
-        width: 72px;
-        height: 72px;
-        border-radius: 16px;
-      }
-      #boot-loader .boot-bar {
-        width: 72px;
-        height: 3px;
-        margin-top: 14px;
-        border-radius: 3px;
-        background: rgba(148, 163, 184, 0.25);
+        align-items: flex-end;
+        justify-content: flex-end;
         overflow: hidden;
       }
-      #boot-loader .boot-bar::after {
-        content: '';
-        display: block;
-        width: 40%;
-        height: 100%;
-        border-radius: 3px;
-        background: #3b82f6;
-        animation: boot-slide 0.9s ease-in-out infinite alternate;
+      #boot-loader .fx-grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.07;
+        background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+        background-size: 75px 75px;
       }
-      @keyframes boot-slide {
+      #boot-loader .fx-glow {
+        position: absolute;
+        right: -12rem;
+        top: -12rem;
+        width: 35rem;
+        height: 35rem;
+        border-radius: 50%;
+        background: #00139f;
+        opacity: 0.6;
+        filter: blur(120px);
+      }
+      /* A delivery on its way: a road, two stops and a truck that keeps driving. */
+      #boot-loader .fx-route {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 30%;
+        height: 60px;
+        opacity: 0.9;
+        transition: opacity 0.2s ease;
+      }
+      #boot-loader .fx-road {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 46px;
+        height: 2px;
+        background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 50%, transparent 50%);
+        background-size: 28px 2px;
+        animation: fx-road 0.7s linear infinite;
+      }
+      #boot-loader .fx-stop {
+        position: absolute;
+        top: 40px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.75);
+        background: #1c398e;
+      }
+      #boot-loader .fx-truck {
+        position: absolute;
+        top: 4px;
+        left: 0;
+        width: 68px;
+        height: 42px;
+        will-change: transform;
+        animation: fx-drive 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+      #boot-loader .fx-mark {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: clamp(0.5rem, 2vw, 2em);
+        padding: 0 clamp(0.75rem, 3vw, 2em);
+        max-width: 100vw;
+      }
+      #boot-loader .fx-iconwrap {
+        display: block;
+        flex-shrink: 0;
+        will-change: transform;
+      }
+      #boot-loader .fx-icon {
+        display: block;
+        width: clamp(3rem, 10vw, 18em);
+        height: auto;
+        will-change: transform;
+        animation: fx-spin 1.05s infinite;
+      }
+      #boot-loader .fx-word {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #boot-loader .fx-word span {
+        display: block;
+        font-weight: 600;
+        font-size: clamp(2rem, 13vw, 16em);
+        line-height: 1.12;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+        will-change: transform;
+        animation: fx-letter-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-delay: calc(0.08s + var(--i, 0) * 0.035s);
+      }
+      /* Out: the mark lifts, the letters rise out of their mask, the panels open from the top. */
+      #boot-loader.fx-out {
+        pointer-events: none;
+      }
+      #boot-loader.fx-out .fx-route {
+        opacity: 0;
+      }
+      #boot-loader.fx-out .fx-iconwrap {
+        animation: fx-lift 0.26s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+      }
+      #boot-loader.fx-out .fx-word span {
+        animation: fx-letter-out 0.3s cubic-bezier(0.6, 0, 0.4, 1) forwards;
+        animation-delay: calc(0.04s + var(--i, 0) * 0.03s);
+      }
+      #boot-loader.fx-out .fx-panel {
+        animation: fx-open 0.34s cubic-bezier(0.7, 0, 0.25, 1) 0.2s forwards;
+      }
+      #boot-loader.fx-out .fx-panel2 {
+        animation: fx-open 0.34s cubic-bezier(0.7, 0, 0.25, 1) 0.27s forwards;
+      }
+      @keyframes fx-spin {
+        0% {
+          transform: rotate(0deg);
+          animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        72%,
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes fx-drive {
         from {
-          transform: translateX(-20%);
+          transform: translateX(-90px);
         }
         to {
-          transform: translateX(170%);
+          transform: translateX(100vw);
+        }
+      }
+      @keyframes fx-road {
+        to {
+          background-position: -28px 0;
+        }
+      }
+      @keyframes fx-open {
+        from {
+          transform: scaleY(1);
+        }
+        to {
+          transform: scaleY(0);
+        }
+      }
+      @keyframes fx-letter-in {
+        from {
+          transform: translateY(105%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      @keyframes fx-letter-out {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-105%);
+        }
+      }
+      @keyframes fx-lift {
+        to {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+      }
+      /* Reduced motion: nothing spins, drives or sweeps. The cover simply fades. */
+      @media (prefers-reduced-motion: reduce) {
+        #boot-loader * {
+          animation: none !important;
+        }
+        #boot-loader {
+          transition: opacity 0.25s ease;
+        }
+        #boot-loader.fx-out {
+          opacity: 0;
         }
       }
     </style>
@@ -94,10 +263,28 @@
   </head>
   <body>
     {{content-for "body"}}
-    <div id="boot-loader">
-      <div class="boot-mark">
-        <img src="{{rootURL}}favicon/android-chrome-192x192.png" width="72" height="72" alt="Chains FleetOps" fetchpriority="high" />
-        <div class="boot-bar"></div>
+    <div id="boot-loader" role="status" aria-label="Loading FleetOps">
+      <div class="fx-panel2"></div>
+      <div class="fx-panel">
+        <div class="fx-grid"></div>
+        <div class="fx-glow"></div>
+        <div class="fx-route" aria-hidden="true">
+          <div class="fx-road"></div>
+          <span class="fx-stop" style="left: 18%"></span>
+          <span class="fx-stop" style="left: 74%"></span>
+          <svg class="fx-truck" viewBox="0 0 68 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#fff" d="M2 7h36a2 2 0 0 1 2 2v21H2z" />
+            <path fill="#fff" fill-opacity=".82" d="M42 15h11a2 2 0 0 1 1.7.9l6.9 10.2a2 2 0 0 1 .4 1.1V30H42z" />
+            <circle cx="15" cy="33" r="5.5" fill="#172554" stroke="#fff" stroke-width="3" />
+            <circle cx="51" cy="33" r="5.5" fill="#172554" stroke="#fff" stroke-width="3" />
+          </svg>
+        </div>
+        <div class="fx-mark" aria-hidden="true">
+          <span class="fx-iconwrap">
+            <svg class="fx-icon" viewBox="0 0 141 141" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M119.479 60.8037C114.176 33.718 87.8892 16.0394 60.8035 21.3426C33.7178 26.6458 16.0392 52.9324 21.3424 80.0181C26.6456 107.104 52.9322 124.782 80.0179 119.479C107.104 114.176 124.782 87.8894 119.479 60.8037ZM97.657 93.2513L52.3595 62.7873L55.2609 77.6059C55.6548 79.6177 54.3131 81.6127 52.3013 82.0066C50.2895 82.4005 48.2945 81.0588 47.9006 79.047L43.2604 55.347C42.8665 53.3352 44.2081 51.3402 46.2199 50.9463L69.92 46.306C71.9318 45.9121 73.9267 47.2538 74.3206 49.2656C74.7145 51.2774 73.3728 53.2724 71.361 53.6663L56.5424 56.5677L101.84 87.0317C102.72 87.6236 103.246 88.4886 103.429 89.4209C103.611 90.3532 103.45 91.3528 102.858 92.2329C101.714 93.9345 99.3586 94.3956 97.657 93.2513Z" /></svg>
+          </span>
+          <div class="fx-word"><span style="--i:0">F</span><span style="--i:1">l</span><span style="--i:2">e</span><span style="--i:3">e</span><span style="--i:4">t</span><span style="--i:5">O</span><span style="--i:6">p</span><span style="--i:7">s</span></div>
+        </div>
       </div>
     </div>
     <script>
