@@ -80,10 +80,23 @@ module.exports = {
         this.generateExtensionsManifest(extensions);
     },
 
+    // EXCLUDED_EXTENSIONS (package names, comma separated) leaves an installed engine out of
+    // the console: no menu, no route, and its files are never downloaded. The API side of the
+    // module is untouched. Chains sets it in docker-compose.override.yml.
+    getExcludedExtensions() {
+        return new Set(
+            (process.env.EXCLUDED_EXTENSIONS || '')
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean)
+        );
+    },
+
     getExtensions() {
         return new Promise((resolve, reject) => {
             const extensions = [];
             const seenPackages = new Set();
+            const excludedPackages = this.getExcludedExtensions();
             const cwd = this.project.root;
 
             return fg(['node_modules/*/package.json', 'node_modules/*/*/package.json'], { cwd })
@@ -110,6 +123,11 @@ module.exports = {
                         }
 
                         seenPackages.add(packageData.name);
+
+                        if (excludedPackages.has(packageData.name)) {
+                            console.log(`[Fleetbase]   - ${packageData.name} left out (EXCLUDED_EXTENSIONS)`);
+                            continue;
+                        }
                         extensions.push(this.only(packageData, ['name', 'description', 'version', 'fleetbase', 'keywords', 'license', 'repository']));
                     }
 

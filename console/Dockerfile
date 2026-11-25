@@ -39,8 +39,20 @@ RUN pnpm install --frozen-lockfile
 # Copy the console directory contents into the container at /console
 COPY . .
 
+# Engines to leave out of the console (package names, comma separated)
+ARG EXCLUDED_EXTENSIONS=""
+ENV EXCLUDED_EXTENSIONS=$EXCLUDED_EXTENSIONS
+
 # Build the application
 RUN pnpm build --environment $ENVIRONMENT
+
+# Engines left out are still compiled by ember-engines; nothing loads them, so drop their files.
+RUN for name in $(echo "$EXCLUDED_EXTENSIONS" | tr ',' ' '); do rm -rf "dist/engines-dist/$name"; done
+
+# Compress text assets once, at the strongest setting; nginx.conf serves the .br or .gz copy.
+RUN apk add --no-cache brotli \
+    && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.json' -o -name '*.map' \) ! -name 'fleetbase.config.json' -size +1k -print0 \
+    | xargs -0 -P 4 -n 8 sh -c 'for f; do brotli -q 11 -k "$f" && gzip -9 -k "$f"; done' _
 
 # ---- Serve Stage ----
 FROM nginx:alpine

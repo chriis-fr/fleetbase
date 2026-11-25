@@ -20,16 +20,109 @@
     <link integrity="" rel="stylesheet" href="{{rootURL}}assets/vendor.css">
     <link integrity="" rel="stylesheet" href="{{rootURL}}assets/@fleetbase/console.css">
 
+    <style>
+      /* Painted with the page itself, before any stylesheet arrives. */
+      html.boot-dark,
+      html.boot-dark body {
+        background-color: #111827;
+      }
+      #boot-loader {
+        position: absolute;
+        z-index: 9999999999;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #boot-loader .boot-mark {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #boot-loader .boot-mark img {
+        width: 72px;
+        height: 72px;
+      }
+      #boot-loader .boot-bar {
+        width: 72px;
+        height: 3px;
+        margin-top: 14px;
+        border-radius: 3px;
+        background: rgba(148, 163, 184, 0.25);
+        overflow: hidden;
+      }
+      #boot-loader .boot-bar::after {
+        content: '';
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: 3px;
+        background: #3b82f6;
+        animation: boot-slide 0.9s ease-in-out infinite alternate;
+      }
+      @keyframes boot-slide {
+        from {
+          transform: translateX(-20%);
+        }
+        to {
+          transform: translateX(170%);
+        }
+      }
+    </style>
+    <script>
+      // Dark from the first paint unless this browser saved the light theme; the app sets the real theme when it starts.
+      (function () {
+        var light = false;
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (/theme/i.test(key) && /light/i.test(localStorage.getItem(key) || '')) {
+              light = true;
+            }
+          }
+        } catch (e) {}
+        if (!light) {
+          document.documentElement.className += ' boot-dark';
+        }
+      })();
+    </script>
+
     {{content-for "head-footer"}}
   </head>
   <body>
     {{content-for "body"}}
-    <div id="boot-loader" class="overloader">
-      <div class="loader-container">
-        <span class="fleetbase-loader" width="16" height="16"></span>
-        <div class="loading-message">Starting...</div>
+    <div id="boot-loader">
+      <div class="boot-mark">
+        <img src="{{rootURL}}favicon/android-chrome-192x192.png" width="72" height="72" alt="Chains FleetOps" />
+        <div class="boot-bar"></div>
       </div>
     </div>
+    <script>
+      // public/sw.js keeps the start page on this device, so a repeat visit does not wait on the network.
+      // After an upgrade it reports the new build; a page that has only just opened reloads into it once.
+      (function () {
+        if (!('serviceWorker' in navigator)) {
+          return;
+        }
+        navigator.serviceWorker.addEventListener('message', function (event) {
+          var data = event.data || {};
+          if (data.type !== 'console-updated') {
+            return;
+          }
+          var justOpened = performance.now() < 15000 || document.getElementById('boot-loader');
+          try {
+            if (justOpened && sessionStorage.getItem('console-reloaded-for') !== data.build) {
+              sessionStorage.setItem('console-reloaded-for', data.build);
+              location.reload();
+            }
+          } catch (e) {}
+        });
+        navigator.serviceWorker.startMessages();
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('{{rootURL}}sw.js').catch(function () {});
+        });
+      })();
+    </script>
     <script src="{{rootURL}}assets/vendor.js"></script>
     <script src="{{rootURL}}assets/@fleetbase/console.js"></script>
 

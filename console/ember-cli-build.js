@@ -12,7 +12,9 @@ module.exports = function (defaults) {
         storeConfigInMeta: false,
 
         fingerprint: {
-            exclude: ['leaflet/', 'leaflet-images/', 'socketcluster-client.min.js', 'fleetbase.config.json', 'extensions.json'],
+            // favicon/ and images/ are mounted over the built copies on the Chains server, under their
+            // plain names, so a hashed name would not exist there. sw.js must keep one address.
+            exclude: ['leaflet/', 'leaflet-images/', 'socketcluster-client.min.js', 'fleetbase.config.json', 'extensions.json', 'favicon/', 'images/', 'sw.js'],
         },
 
         liveReload: {

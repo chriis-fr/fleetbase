@@ -16,6 +16,10 @@ services:
       CONSOLE_HOST: https://progressusmavericks.co.ke
       # api/.env has APP_DEBUG=true; with it on, an error page shows code and settings to anyone.
       APP_DEBUG: "false"
+      # docker-compose.yml labels the stack "development" and api/.env logs at debug level.
+      # APP_ENV is already production; these two bring the rest in line.
+      ENVIRONMENT: production
+      LOG_LEVEL: info
       # Add your environment-specific variables here
       # Public live-update address given to apps (Navigator instance link). nginx proxies
       # wss://api.progressusmavericks.co.ke/socketcluster/ to the socket container.
@@ -51,6 +55,8 @@ services:
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
       APP_DEBUG: "false"
+      ENVIRONMENT: production
+      LOG_LEVEL: info
       MAIL_MAILER: smtp
       OSRM_HOST: https://router.project-osrm.org
 
@@ -66,6 +72,8 @@ services:
     environment:
       CONSOLE_HOST: https://progressusmavericks.co.ke
       APP_DEBUG: "false"
+      ENVIRONMENT: production
+      LOG_LEVEL: info
       MAIL_MAILER: smtp
       OSRM_HOST: https://router.project-osrm.org
 
@@ -75,6 +83,9 @@ services:
     build:
       args:
         ENVIRONMENT: production
+        # Modules nobody uses here. Each one was a 2 MB download right after sign-in.
+        # Take a name off this list and rebuild the console to bring that module back.
+        EXCLUDED_EXTENSIONS: "@fleetbase/ai-engine,@fleetbase/valhalla-engine,@fleetbase/vroom-engine"
     volumes:
       - ./console/fleetbase.config.json:/usr/share/nginx/html/fleetbase.config.json
       - ./console/public/images:/usr/share/nginx/html/images
