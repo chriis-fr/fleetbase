@@ -609,3 +609,14 @@ body[data-theme='dark'] .oauth-provider-google .oauth-provider-logo-google svg {
 .chains-auth-attribution * {
     color: #8a93a8 !important;
 }
+
+/* Info blocks keep their own tint, readable on the white card. */
+.chains-auth-card .ui-input-info-block {
+    border-color: #c7d2fe !important;
+    background: #eef2ff !important;
+}
+
+.chains-auth-card .ui-input-info-block,
+.chains-auth-card .ui-input-info-block * {
+    color: #1e3a8a !important;
+}
