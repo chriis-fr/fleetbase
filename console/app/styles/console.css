@@ -377,6 +377,7 @@ body[data-theme='dark'] .oauth-provider-google .oauth-provider-logo-google svg {
 }
 
 .chains-auth-title span {
+    font-family: inherit;
     background: linear-gradient(to right, #f5a3e8, #9db4ff);
     -webkit-background-clip: text;
     background-clip: text;

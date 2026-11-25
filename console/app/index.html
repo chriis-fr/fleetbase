@@ -68,17 +68,6 @@
         background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
         background-size: 75px 75px;
       }
-      #boot-loader .fx-glow {
-        position: absolute;
-        right: -12rem;
-        top: -12rem;
-        width: 35rem;
-        height: 35rem;
-        border-radius: 50%;
-        background: #00139f;
-        opacity: 0.6;
-        filter: blur(120px);
-      }
       /* A delivery on its way: a road, two stops and a truck that keeps driving. */
       #boot-loader .fx-route {
         position: absolute;
@@ -89,14 +78,17 @@
         opacity: 0.9;
         transition: opacity 0.2s ease;
       }
+      /* Moved by transform, not background-position: the browser can do that without repainting
+         while the app's scripts are busy starting. */
       #boot-loader .fx-road {
         position: absolute;
         left: 0;
-        right: 0;
+        right: -28px;
         top: 46px;
         height: 2px;
         background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 50%, transparent 50%);
         background-size: 28px 2px;
+        will-change: transform;
         animation: fx-road 0.7s linear infinite;
       }
       #boot-loader .fx-stop {
@@ -196,7 +188,7 @@
       }
       @keyframes fx-road {
         to {
-          background-position: -28px 0;
+          transform: translateX(-28px);
         }
       }
       @keyframes fx-open {
@@ -268,7 +260,6 @@
       <div class="fx-panel2"></div>
       <div class="fx-panel">
         <div class="fx-grid"></div>
-        <div class="fx-glow"></div>
         <div class="fx-route" aria-hidden="true">
           <div class="fx-road"></div>
           <span class="fx-stop" style="left: 18%"></span>
