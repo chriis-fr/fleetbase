@@ -68,6 +68,32 @@
         </div>
     </section>
 
+    {{! Chains: which optional modules this organisation sees. Only a console admin reaches this page. }}
+    <section class="rounded-md border bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <h2 class="text-xs font-bold uppercase text-gray-900 dark:text-white">Modules</h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">What this organization sees in its console. A change takes effect the next time they open or reload it.</p>
+
+        <div class="mt-4 space-y-3">
+            <div class="flex items-center justify-between gap-4 rounded-md border border-gray-100 p-3 dark:border-gray-700">
+                <div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                        Storefront
+                        {{#if @model.options.modules.storefront}}
+                            <span class="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800" data-test-module-state="storefront">On</span>
+                        {{else}}
+                            <span class="ml-1 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700" data-test-module-state="storefront">Off</span>
+                        {{/if}}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Fleetbase's built-in store manager: products, store orders, customers. Off for everyone unless switched on here.</div>
+                </div>
+                <div class="flex flex-wrap justify-end gap-2">
+                    <Button @size="xs" @text="Turn on" @icon="circle-check" @disabled={{@model.options.modules.storefront}} @onClick={{fn this.setModule "storefront" true}} />
+                    <Button @size="xs" @text="Turn off" @icon="circle-pause" @disabled={{not @model.options.modules.storefront}} @onClick={{fn this.setModule "storefront" false}} />
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="rounded-md border bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h2 class="text-xs font-bold uppercase text-gray-900 dark:text-white">Danger Zone</h2>
         <div class="mt-4 rounded-md border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">

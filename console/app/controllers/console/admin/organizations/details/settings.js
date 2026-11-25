@@ -65,4 +65,15 @@ export default class ConsoleAdminOrganizationsDetailsSettingsController extends 
             },
         });
     }
+
+    /** Chains: switch an optional module on or off for this organisation (core-api setAdminModules). */
+    @action async setModule(name, enabled) {
+        try {
+            await this.fetch.patch(`companies/${this.model.uuid}/modules`, { [name]: enabled });
+            this.notifications.success(`${enabled ? 'Switched on' : 'Switched off'}. They see the change the next time they open or reload the console.`);
+            return this.router.refresh();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
 }

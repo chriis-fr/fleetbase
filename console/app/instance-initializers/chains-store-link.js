@@ -4,11 +4,14 @@ import config from '@fleetbase/console/config/environment';
  * The "Storefront" item in the top menu opens the business's own web store.
  *
  * Chains stores are web shops that run on chains-API, not on Fleetbase's Storefront
- * module, so that module is left out of this console (EXCLUDED_EXTENSIONS). The address
- * is set for the organisation in the Chains admin portal, and saved there only once the
- * store proves it holds the organisation's storefront key. This asks chains-API for it
- * each time the console opens, so changing it in Chains changes it here with nothing to
- * keep in step. An organisation with no verified address gets no item.
+ * module. The address is set for the organisation in the Chains admin portal, and saved
+ * there only once the store proves it holds the organisation's storefront key. This asks
+ * chains-API for it each time the console opens, so changing it in Chains changes it here
+ * with nothing to keep in step. An organisation with no verified address gets no item.
+ *
+ * The item is called "Storefront", unless the console admin has also switched Fleetbase's
+ * own Storefront module on for the organisation (utils/organization-modules.js): that
+ * module owns the name, and the link is then "Web store".
  *
  * Switching organisation reloads the console (controllers/console.js), so one lookup per
  * page load is enough.
@@ -39,7 +42,8 @@ export function initialize(appInstance) {
                 return;
             }
 
-            universe.getService('menu').registerHeaderMenuItem('Storefront', null, {
+            const hasStorefrontModule = universe.extensionManager?.isInstalled?.('@fleetbase/storefront-engine') === true;
+            universe.getService('menu').registerHeaderMenuItem(hasStorefrontModule ? 'Web store' : 'Storefront', null, {
                 id: 'chains-storefront',
                 slug: 'chains-storefront',
                 icon: 'store',
