@@ -10,6 +10,8 @@
 
     {{content-for "head"}}
 
+    <!-- The loading screen's logo, asked for ahead of the scripts so it shows at once. -->
+    <link rel="preload" as="image" href="{{rootURL}}favicon/android-chrome-192x192.png" fetchpriority="high" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
@@ -42,6 +44,7 @@
       #boot-loader .boot-mark img {
         width: 72px;
         height: 72px;
+        border-radius: 16px;
       }
       #boot-loader .boot-bar {
         width: 72px;
@@ -93,7 +96,7 @@
     {{content-for "body"}}
     <div id="boot-loader">
       <div class="boot-mark">
-        <img src="{{rootURL}}favicon/android-chrome-192x192.png" width="72" height="72" alt="Chains FleetOps" />
+        <img src="{{rootURL}}favicon/android-chrome-192x192.png" width="72" height="72" alt="Chains FleetOps" fetchpriority="high" />
         <div class="boot-bar"></div>
       </div>
     </div>
