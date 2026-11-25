@@ -38,6 +38,11 @@ module.exports = function (environment) {
             servers: {},
         },
 
+        // chains-API, asked for the organisation's web store address (instance-initializers/chains-store-link.js).
+        chains: {
+            apiUrl: getenv('CHAINS_API_URL', 'https://api.chains-erp.com'),
+        },
+
         socket: {
             path: getenv('SOCKETCLUSTER_PATH', '/socketcluster/'),
             hostname: getenv('SOCKETCLUSTER_HOST'),
