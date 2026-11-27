@@ -15,7 +15,7 @@
  * modules' stylesheets are added to the page after this one, as each module is opened.
  *
  * Order of the file: 1 tokens and type, 2 top bar, 3 side menu, 4 buttons, 5 forms,
- * 6 view switch, 7 tables, 8 menus and pop-ups, 9 sign-in pages.
+ * 6 view switch, 7 tables, 8 menus and pop-ups, 9 sign-in pages, 10 session screen.
  */
 
 /* ── 1. Tokens and type ─────────────────────────────────────────────────────────────── */
@@ -715,4 +715,139 @@ html body.fleetbase-console .flb--modal {
 .chains-auth-card .ui-input-info-block,
 .chains-auth-card .ui-input-info-block * {
     color: #1e3a8a !important;
+}
+
+/* ── 10. Session screen ─────────────────────────────────────────────────────────────── */
+
+/* Right after a password is accepted, and again on signing out, Fleetbase's session service
+   covers the page with a grey sheet, a spinner and a line of text ("Starting session...").
+   Here that sheet is drawn as the opening cover of app/index.html: the blue panel and grid,
+   the truck on its road, the spinning mark and the word. The sheet is Fleetbase's own
+   element, so only what CSS can paint is here; its line of text is not shown. */
+html body > .overloader:has(> .flex > span.test-sm),
+html body[data-theme] > .overloader:has(> .flex > span.test-sm) {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    overflow: hidden;
+    cursor: progress;
+    background: linear-gradient(to bottom right, #1c398e, #172554);
+}
+
+html body > .overloader:has(> .flex > span.test-sm)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+    background-size: 75px 75px;
+}
+
+/* The road. */
+html body > .overloader:has(> .flex > span.test-sm)::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: -28px;
+    top: calc(30% + 46px);
+    height: 2px;
+    opacity: 0.9;
+    background-image: linear-gradient(90deg, rgb(255 255 255 / 0.4) 50%, transparent 50%);
+    background-size: 28px 2px;
+    animation: chains-session-road 0.7s linear infinite;
+}
+
+html body > .overloader:has(> .flex > span.test-sm) > .flex {
+    position: static;
+    align-items: center;
+    justify-content: flex-start;
+    gap: clamp(0.5rem, 2vw, 32px);
+    padding: 0 clamp(0.75rem, 3vw, 32px);
+    max-width: 100vw;
+}
+
+/* The truck. */
+html body > .overloader:has(> .flex > span.test-sm) > .flex::before {
+    content: '';
+    position: absolute;
+    top: calc(30% + 4px);
+    left: 0;
+    width: 68px;
+    height: 42px;
+    opacity: 0.9;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 68 42' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23fff' d='M2 7h36a2 2 0 0 1 2 2v21H2z'/%3E%3Cpath fill='%23fff' fill-opacity='.82' d='M42 15h11a2 2 0 0 1 1.7.9l6.9 10.2a2 2 0 0 1 .4 1.1V30H42z'/%3E%3Ccircle cx='15' cy='33' r='5.5' fill='%23172554' stroke='%23fff' stroke-width='3'/%3E%3Ccircle cx='51' cy='33' r='5.5' fill='%23172554' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E") center / contain no-repeat;
+    animation: chains-session-drive 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* The mark, in place of the spinner. */
+html body > .overloader:has(> .flex > span.test-sm) > .flex > div {
+    flex-shrink: 0;
+    width: clamp(3rem, 10vw, 288px);
+    aspect-ratio: 1;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 141 141' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23fff' d='M119.479 60.8037C114.176 33.718 87.8892 16.0394 60.8035 21.3426C33.7178 26.6458 16.0392 52.9324 21.3424 80.0181C26.6456 107.104 52.9322 124.782 80.0179 119.479C107.104 114.176 124.782 87.8894 119.479 60.8037ZM97.657 93.2513L52.3595 62.7873L55.2609 77.6059C55.6548 79.6177 54.3131 81.6127 52.3013 82.0066C50.2895 82.4005 48.2945 81.0588 47.9006 79.047L43.2604 55.347C42.8665 53.3352 44.2081 51.3402 46.2199 50.9463L69.92 46.306C71.9318 45.9121 73.9267 47.2538 74.3206 49.2656C74.7145 51.2774 73.3728 53.2724 71.361 53.6663L56.5424 56.5677L101.84 87.0317C102.72 87.6236 103.246 88.4886 103.429 89.4209C103.611 90.3532 103.45 91.3528 102.858 92.2329C101.714 93.9345 99.3586 94.3956 97.657 93.2513Z'/%3E%3C/svg%3E") center / contain no-repeat;
+    animation: chains-session-spin 1.05s infinite;
+}
+
+html body > .overloader:has(> .flex > span.test-sm) > .flex > div > svg {
+    display: none;
+}
+
+/* The word, in place of the line of text. */
+html body > .overloader:has(> .flex > span.test-sm) > .flex > span {
+    display: block;
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0;
+    line-height: 0;
+}
+
+html body > .overloader:has(> .flex > span.test-sm) > .flex > span::before {
+    content: 'FleetOps';
+    display: block;
+    font-family: var(--chains-font);
+    font-weight: 600;
+    font-size: clamp(2rem, 13vw, 256px);
+    line-height: 1.3;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    animation: chains-session-word 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
+@keyframes chains-session-spin {
+    0% {
+        transform: rotate(0deg);
+        animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    72%,
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes chains-session-drive {
+    from {
+        transform: translateX(-90px);
+    }
+    to {
+        transform: translateX(100vw);
+    }
+}
+
+@keyframes chains-session-road {
+    to {
+        transform: translateX(-28px);
+    }
+}
+
+@keyframes chains-session-word {
+    from {
+        transform: translateY(105%);
+    }
+    to {
+        transform: translateY(0);
+    }
 }
