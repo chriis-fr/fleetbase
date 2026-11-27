@@ -1,0 +1,718 @@
+/*
+ * Chains theme for the FleetOps console.
+ *
+ * Everything that makes the console look like Chains and not like stock Fleetbase lives in
+ * this one file. It is plain CSS, loaded after Fleetbase's own stylesheets (the last <link>
+ * in app/index.html), and it only overrides: no Fleetbase file, template or package is
+ * changed for it. An upstream update can therefore not conflict with it. What can happen is
+ * that upstream renames a class used below; that rule then stops applying and that one piece
+ * falls back to the stock look until the selector here is updated.
+ *
+ * Fleetbase has no theme variables: its colours are written into each rule, once for
+ * body[data-theme=light] and once for body[data-theme=dark]. So each piece is restyled by
+ * naming it, in both themes. Selectors start with html body.fleetbase-console (the signed-in
+ * app) so they win over Fleetbase's rules whatever order the stylesheets arrive in: the
+ * modules' stylesheets are added to the page after this one, as each module is opened.
+ *
+ * Order of the file: 1 tokens and type, 2 top bar, 3 side menu, 4 buttons, 5 forms,
+ * 6 view switch, 7 tables, 8 menus and pop-ups, 9 sign-in pages.
+ */
+
+/* ── 1. Tokens and type ─────────────────────────────────────────────────────────────── */
+
+/* Geist, the typeface of app.chains-erp.com. One variable file holds every weight. */
+@font-face {
+    font-family: 'Geist';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/chains-fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Geist';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/chains-fonts/geist-latin-ext-wght-normal.woff2') format('woff2-variations');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+    /* The blue of the sign-in panel and the opening cover. */
+    --chains-blue: #1c398e;
+    --chains-blue-deep: #172554;
+    /* The same blue, lifted so it reads on the dark theme's near-black. */
+    --chains-blue-bright: #5b7cf0;
+    --chains-tint: #eef2fb;
+    --chains-tint-strong: #dfe6f8;
+    --chains-tint-dark: rgb(91 124 240 / 0.16);
+    --chains-tint-dark-strong: rgb(91 124 240 / 0.26);
+    --chains-radius: 8px;
+    --chains-font: 'Geist', 'Inter UI', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+/* Fleetbase sets Inter on every kind of element by name (div, a, span, td and so on), so
+   the font cannot be changed on the body alone: it is set on everything, and the faces
+   that must stay different are named again underneath. */
+html:root,
+html:root body,
+html:root body * {
+    font-family: var(--chains-font);
+}
+
+html:root body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Code, keys and ids stay in a fixed-width face. */
+html:root body :is(code, pre, kbd, samp, tt, .font-mono, .ember-code-block),
+html:root body :is(code, pre, .font-mono, .ember-code-block) * {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+/* The serif headings of the sign-in pages. */
+html:root body .chains-auth-title,
+html:root body .chains-auth-card :is(h1, h2, h3) {
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+
+html:root body .chains-auth-title span {
+    font-family: inherit;
+}
+
+/* Figures in tables line up in columns. */
+html body.fleetbase-console table td,
+html body.fleetbase-console table th {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── 2. Top bar ─────────────────────────────────────────────────────────────────────── */
+
+html body.fleetbase-console[data-theme='light'] .next-view-header {
+    background-color: #ffffff;
+    border-color: #e6e9f2;
+}
+
+html body.fleetbase-console .next-view-header-item {
+    border-radius: var(--chains-radius);
+    font-weight: 500;
+    transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
+}
+
+/* The open module is a quiet tint with the brand blue, not a solid bright block. */
+html body.fleetbase-console[data-theme='light'] .next-view-header-item:hover,
+html body.fleetbase-console[data-theme='light'] a.next-view-header-item:hover,
+html body.fleetbase-console[data-theme='light'] .next-view-header-item.is-open {
+    background-color: var(--chains-tint);
+    color: var(--chains-blue-deep);
+}
+
+html body.fleetbase-console[data-theme='light'] .next-view-header-item.active,
+html body.fleetbase-console[data-theme='light'] a.next-view-header-item.active:hover {
+    background-color: var(--chains-tint-strong);
+    color: var(--chains-blue);
+    font-weight: 600;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-view-header-item:hover,
+html body.fleetbase-console[data-theme='dark'] .next-view-header-item.is-open {
+    background-color: var(--chains-tint-dark);
+    color: #ffffff;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-view-header-item.active {
+    background-color: var(--chains-tint-dark-strong);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ── 3. Side menu ───────────────────────────────────────────────────────────────────── */
+
+html body.fleetbase-console .next-sidebar-navigator-back,
+html body.fleetbase-console .next-sidebar-navigator-item,
+html body.fleetbase-console .next-sidebar-navigator-primary-action,
+html body.fleetbase-console .next-sidebar-navigator-search {
+    border-radius: var(--chains-radius);
+}
+
+/* The one main action of a module: Create new order. */
+html body.fleetbase-console .next-sidebar-navigator-primary-action {
+    background-color: var(--chains-blue);
+    /* The module gives this button a light-blue edge of its own. */
+    border-color: transparent;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    box-shadow:
+        0 1px 2px rgb(16 24 40 / 0.1),
+        0 6px 14px -8px rgb(0 19 159 / 0.55);
+    transition: background-color 0.12s ease;
+}
+
+html body.fleetbase-console .next-sidebar-navigator-primary-action:hover {
+    background-color: var(--chains-blue-deep);
+    border-color: transparent;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-sidebar-navigator-primary-action {
+    background-color: #3555c8;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-sidebar-navigator-primary-action:hover {
+    background-color: #4366dc;
+    border-color: transparent;
+}
+
+html body.fleetbase-console .next-sidebar-navigator-item {
+    transition: background-color 0.12s ease;
+}
+
+html body.fleetbase-console[data-theme='light'] .next-sidebar-navigator-item:hover {
+    background-color: var(--chains-tint);
+}
+
+html body.fleetbase-console[data-theme='light'] .next-sidebar-navigator-item.is-active,
+html body.fleetbase-console[data-theme='light'] .next-sidebar-navigator-item.is-parent-active {
+    background-color: var(--chains-tint-strong);
+    color: var(--chains-blue);
+    font-weight: 600;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-sidebar-navigator-item:hover {
+    background-color: var(--chains-tint-dark);
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-sidebar-navigator-item.is-active,
+html body.fleetbase-console[data-theme='dark'] .next-sidebar-navigator-item.is-parent-active {
+    background-color: var(--chains-tint-dark-strong);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ── 4. Buttons ─────────────────────────────────────────────────────────────────────── */
+
+html body.fleetbase-console .btn-wrapper,
+html body.fleetbase-console .btn-wrapper > .btn {
+    border-radius: var(--chains-radius);
+}
+
+/* The main button of a screen (New, Save Changes, Create ...) is the Chains blue. */
+html body.fleetbase-console[data-theme='light'] :is(.btn, a.btn).btn-primary,
+html body.fleetbase-console[data-theme='light'] .fleet-ops-operations-monitor-empty-action {
+    background-color: var(--chains-blue);
+    border-color: var(--chains-blue);
+    color: #ffffff;
+}
+
+html body.fleetbase-console[data-theme='light'] :is(.btn, a.btn).btn-primary:hover:not(:disabled),
+html body.fleetbase-console[data-theme='light'] :is(.btn, a.btn).btn-primary:active,
+html body.fleetbase-console[data-theme='light'] :is(.btn, a.btn).btn-primary:focus,
+html body.fleetbase-console[data-theme='light'] .fleet-ops-operations-monitor-empty-action:hover {
+    background-color: var(--chains-blue-deep);
+    border-color: var(--chains-blue-deep);
+}
+
+html body.fleetbase-console[data-theme='dark'] :is(.btn, a.btn).btn-primary,
+html body.fleetbase-console[data-theme='dark'] .fleet-ops-operations-monitor-empty-action {
+    background-color: #3555c8;
+    border-color: #3555c8;
+    color: #ffffff;
+}
+
+html body.fleetbase-console[data-theme='dark'] :is(.btn, a.btn).btn-primary:hover:not(:disabled),
+html body.fleetbase-console[data-theme='dark'] :is(.btn, a.btn).btn-primary:active,
+html body.fleetbase-console[data-theme='dark'] :is(.btn, a.btn).btn-primary:focus,
+html body.fleetbase-console[data-theme='dark'] .fleet-ops-operations-monitor-empty-action:hover {
+    background-color: #4366dc;
+    border-color: #4366dc;
+}
+
+/* Plain buttons answer the pointer with the brand tint; stock Fleetbase greys their text. */
+html body.fleetbase-console[data-theme='light'] :is(.btn, a.btn).btn-default:hover:not(:disabled) {
+    background-color: var(--chains-tint);
+    border-color: #c5d0ee;
+    color: var(--chains-blue-deep);
+}
+
+html body.fleetbase-console[data-theme='dark'] :is(.btn, a.btn).btn-default:hover:not(:disabled) {
+    border-color: var(--chains-blue-bright);
+    color: #ffffff;
+}
+
+/* ── 5. Forms ───────────────────────────────────────────────────────────────────────── */
+
+html body.fleetbase-console :is(.form-input, .form-select, .form-textarea) {
+    border-radius: var(--chains-radius);
+}
+
+/* The field being typed in is ringed in the brand blue. */
+html body.fleetbase-console[data-theme='light'] :is(.form-input, .form-select, .form-textarea):focus,
+html body.fleetbase-console[data-theme='light'] .ember-power-select-trigger.form-input:is(:focus, [aria-expanded='true']) {
+    border-color: var(--chains-blue);
+    box-shadow: 0 0 0 3px rgb(28 57 142 / 0.14);
+}
+
+html body.fleetbase-console[data-theme='dark'] :is(.form-input, .form-select, .form-textarea):focus,
+html body.fleetbase-console[data-theme='dark'] .ember-power-select-trigger.form-input:is(:focus, [aria-expanded='true']) {
+    border-color: var(--chains-blue-bright);
+    box-shadow: 0 0 0 3px rgb(91 124 240 / 0.22);
+}
+
+/* Tick boxes and text links take their colour from the text colour. */
+html body.fleetbase-console[data-theme='light'] :is(.form-checkbox, .form-radio, a, span, button).text-sky-500 {
+    color: var(--chains-blue);
+}
+
+html body.fleetbase-console[data-theme='light'] :is(a, span, button).text-sky-500:hover {
+    color: var(--chains-blue-deep);
+}
+
+html body.fleetbase-console[data-theme='dark'] :is(.form-checkbox, .form-radio, a, span, button).text-sky-500 {
+    color: var(--chains-blue-bright);
+}
+
+/* ── 6. View switch (Map, Table, Board) ─────────────────────────────────────────────── */
+
+html body.fleetbase-console[data-theme='light'] .next-map-container-view-switch > button.active {
+    background-color: var(--chains-blue);
+    color: #ffffff;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-map-container-view-switch > button.active {
+    background-color: #3555c8;
+    color: #ffffff;
+}
+
+/* ── 7. Tables ──────────────────────────────────────────────────────────────────────── */
+
+/* Column headings: a quiet band, so the rows are what the eye reads. */
+html body.fleetbase-console[data-theme='light'] .next-table-wrapper table thead th {
+    background-color: #f7f8fc;
+    color: #56607a;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-table-wrapper table thead th {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* The row under the pointer is tinted across its whole width, pinned cells included. */
+html body.fleetbase-console[data-theme='light'] .next-table-wrapper table tbody tr:hover td,
+html body.fleetbase-console[data-theme='light'] .next-table-wrapper table tbody tr:hover td.is-sticky {
+    background-color: #f4f6fd;
+}
+
+/* Stock Fleetbase fades the text of the row under the pointer; here it stays readable. */
+html body.fleetbase-console[data-theme='light'] .next-table-wrapper table tbody tr:hover td,
+html body.fleetbase-console[data-theme='light'] .next-table-wrapper table tbody tr:hover td :is(a, span a) {
+    color: #1f2937;
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-table-wrapper table tbody tr:hover td,
+html body.fleetbase-console[data-theme='dark'] .next-table-wrapper table tbody tr:hover td.is-sticky {
+    background-color: #18233f;
+}
+
+/* Page numbers under a table. */
+html body.fleetbase-console[data-theme='light'] .fleetbase-pagination .page-item.active {
+    background-color: var(--chains-tint-strong);
+    color: var(--chains-blue);
+    box-shadow: none;
+}
+
+html body.fleetbase-console[data-theme='dark'] .fleetbase-pagination .page-item.active {
+    background-color: var(--chains-tint-dark-strong);
+    color: #ffffff;
+    box-shadow: none;
+}
+
+html body.fleetbase-console .fleetbase-pagination :is(.page-item, .page-item-arrow):focus {
+    border-color: var(--chains-blue-bright);
+    outline-color: var(--chains-blue-bright);
+}
+
+/* ── 8. Menus and pop-ups ───────────────────────────────────────────────────────────── */
+
+html body.fleetbase-console .next-dd-menu {
+    border-radius: 10px;
+}
+
+/* The menu line under the pointer: the brand tint, where stock Fleetbase fills it bright blue. */
+html body.fleetbase-console[data-theme='light'] .next-dd-menu :is(.next-dd-item, a.next-dd-item):is(:hover, .active) {
+    background-color: var(--chains-tint-strong);
+    color: var(--chains-blue-deep);
+}
+
+html body.fleetbase-console[data-theme='dark'] .next-dd-menu :is(.next-dd-item, a.next-dd-item):is(:hover, .active) {
+    background-color: var(--chains-tint-dark-strong);
+    color: #ffffff;
+}
+
+/* Pop-up boxes read their corner from this Fleetbase variable. */
+html body.fleetbase-console .flb--modal {
+    --flb-modal-border-radius: 12px;
+    --flb-modal-inner-border-radius: 11px;
+}
+
+/* ── 9. Sign-in pages ───────────────────────────────────────────────────────────────── */
+
+/* Chains sign-in layout (app/templates/auth.hbs)
+   Same panel, grid, card and type as app.chains-erp.com/auth. The pages inside the card
+   (login, forgot password, two-factor, verification) are stock Fleetbase templates written
+   for a grey page in either theme; the rules under .chains-auth-card put them on a white
+   card whatever the theme, which is why they carry !important. */
+.chains-auth {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #ffffff;
+}
+
+.chains-auth-aside {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+    background: linear-gradient(to bottom right, #1c398e, #172554);
+}
+
+@media (width >= 1024px) {
+    .chains-auth-aside {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1.5rem;
+        width: 42%;
+        max-width: 640px;
+        padding: clamp(24px, 6vh, 56px) 3rem;
+    }
+}
+
+.chains-auth-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    pointer-events: none;
+    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+    background-size: 75px 75px;
+}
+
+.chains-auth-glow {
+    position: absolute;
+    right: -12rem;
+    top: -12rem;
+    width: 35rem;
+    height: 35rem;
+    border-radius: 9999px;
+    background: #00139f;
+    opacity: 0.6;
+    filter: blur(120px);
+    pointer-events: none;
+}
+
+.chains-auth-watermark {
+    position: absolute;
+    right: -7rem;
+    bottom: -7rem;
+    width: 440px;
+    height: 440px;
+    opacity: 0.07;
+    pointer-events: none;
+}
+
+.chains-auth-brand {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: fit-content;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+}
+
+.chains-auth-brand img {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #ffffff;
+    object-fit: contain;
+    padding: 2px;
+}
+
+.chains-auth-pitch {
+    position: relative;
+    max-width: 520px;
+}
+
+.chains-auth-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(191 219 254 / 0.8);
+}
+
+.chains-auth-title {
+    margin-top: clamp(8px, 1.6vh, 16px);
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-size: clamp(32px, 6.2vh, 46px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.015em;
+    color: #ffffff;
+}
+
+.chains-auth-title span {
+    font-family: inherit;
+    background: linear-gradient(to right, #f5a3e8, #9db4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.chains-auth-lead {
+    margin-top: clamp(10px, 2.2vh, 20px);
+    font-size: clamp(15px, 2.2vh, 17px);
+    line-height: 1.6;
+    color: rgb(219 234 254 / 0.85);
+}
+
+.chains-auth-points {
+    margin-top: clamp(14px, 4vh, 36px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.6vh, 14px);
+}
+
+.chains-auth-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 15px;
+    line-height: 1.4;
+    color: rgb(239 246 255 / 0.9);
+}
+
+.chains-auth-check {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.12);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2);
+}
+
+.chains-auth-check svg {
+    width: 12px;
+    height: 12px;
+}
+
+.chains-auth-foot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 13px;
+    color: rgb(191 219 254 / 0.75);
+}
+
+.chains-auth-foot a:hover {
+    color: #ffffff;
+}
+
+.chains-auth-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background-color: #ffffff;
+    background-image: linear-gradient(#edeff5 1px, transparent 1px), linear-gradient(90deg, #edeff5 1px, transparent 1px);
+    background-size: 75px 75px;
+    background-position: -1px -1px;
+}
+
+.chains-auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 2rem;
+    border: 1px solid #e3e7f0;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow:
+        0 1px 2px rgb(16 24 40 / 0.04),
+        0 24px 48px -24px rgb(0 19 159 / 0.22);
+    animation: chains-auth-in 0.22s ease-out both;
+}
+
+@keyframes chains-auth-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chains-auth-card {
+        animation: none;
+    }
+}
+
+/* Some auth pages bring their own grey card; inside ours it is just content. */
+.chains-auth-card > div.shadow,
+.chains-auth-card > div > div.shadow {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.chains-auth-card h1,
+.chains-auth-card h2,
+.chains-auth-card h3 {
+    font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+    color: #0b1437 !important;
+}
+
+.chains-auth-card h2 {
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+    white-space: normal;
+}
+
+.chains-auth-card label,
+.chains-auth-card p,
+.chains-auth-card li,
+.chains-auth-card form span:not(.btn-wrapper) {
+    color: #1f2a44 !important;
+}
+
+.chains-auth-card a:not(.btn) {
+    color: #00139f !important;
+}
+
+.chains-auth-card a:not(.btn):hover {
+    text-decoration: underline;
+}
+
+.chains-auth-card form .rounded-md.shadow-sm {
+    box-shadow: none !important;
+}
+
+.chains-auth-card form .-mt-px {
+    margin-top: 0.75rem !important;
+}
+
+.chains-auth-card input:not([type='checkbox'], [type='radio'], [type='hidden']) {
+    width: 100%;
+    padding: 0.7rem 0.9rem !important;
+    border: 1px solid #d5dbe8 !important;
+    border-radius: 12px !important;
+    background-color: #ffffff !important;
+    color: #0b1437 !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+}
+
+.chains-auth-card input::placeholder {
+    color: #8a93a8 !important;
+}
+
+.chains-auth-card input:not([type='checkbox'], [type='radio']):focus {
+    border-color: #00139f !important;
+    box-shadow: 0 0 0 3px rgb(0 19 159 / 0.12) !important;
+    outline: none !important;
+}
+
+.chains-auth-card input[type='checkbox'] {
+    border-radius: 5px;
+    border-color: #c5cce0;
+    color: #00139f;
+}
+
+.chains-auth-card .btn-wrapper > button.btn,
+.chains-auth-card button.btn,
+.chains-auth-card a.btn {
+    justify-content: center;
+    width: 100%;
+    padding: 0.72rem 1rem !important;
+    border: 1px solid #d5dbe8 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2a44 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 1.25rem !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.chains-auth-card .btn-wrapper > button.btn:hover:not(:disabled),
+.chains-auth-card button.btn:hover:not(:disabled) {
+    background: #f4f6fb !important;
+}
+
+.chains-auth-card .btn-wrapper > button.btn.btn-primary,
+.chains-auth-card button.btn.btn-primary {
+    border-color: #00139f !important;
+    background: #00139f !important;
+    color: #ffffff !important;
+}
+
+.chains-auth-card .btn-wrapper > button.btn.btn-primary:hover:not(:disabled),
+.chains-auth-card button.btn.btn-primary:hover:not(:disabled) {
+    border-color: #000f7d !important;
+    background: #000f7d !important;
+}
+
+.chains-auth-card button.btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.chains-auth-card button.btn svg,
+.chains-auth-card button.btn span {
+    color: inherit !important;
+}
+
+.chains-auth-attribution {
+    margin-top: 1.25rem;
+    font-size: 12px;
+}
+
+.chains-auth-attribution,
+.chains-auth-attribution * {
+    color: #8a93a8 !important;
+}
+
+/* Info blocks keep their own tint, readable on the white card. */
+.chains-auth-card .ui-input-info-block {
+    border-color: #c7d2fe !important;
+    background: #eef2ff !important;
+}
+
+.chains-auth-card .ui-input-info-block,
+.chains-auth-card .ui-input-info-block * {
+    color: #1e3a8a !important;
+}
